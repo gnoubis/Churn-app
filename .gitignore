@@ -1,0 +1,35 @@
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+env/
+venv/
+ENV/
+.venv/
+.ENV/
+ai_generator/venv
+churn_model_service/venv
+recommendation_service/venv
+sentiment_service/venv
+# Fichiers de logs
+*.log
+
+# Fichiers de configuration locaux
+*.env
+*.local
+
+# Dossiers de l’IDE
+.vscode/
+.idea/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Sorties de tests
+htmlcov/
+.coverage
+.tox/
+.pytest_cache/
