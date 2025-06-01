@@ -18,28 +18,48 @@ from .serializers import (
 )
 
 
-
-
 class ChurnPredictionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         payload = request.data
+
+        # Validation minimale
+        if not payload.get("client_name"):
+            return Response({"error": "client_name is required."}, status=400)
+
         try:
+            # Appel à l'API FastAPI de prédiction
             response = requests.post(settings.CHURN_URL, json=payload)
+            response.raise_for_status()  # Lève une exception si status_code >= 400
+
             result = response.json()
 
-            client, _ = Client.objects.get_or_create(name=payload.get("client_name"))
+            # Création ou récupération du client
+            client, _ = Client.objects.get_or_create(
+                name=payload.get("client_name"),
+                defaults={
+                    "email": payload.get("email", ""),
+                    "phone": payload.get("phone", "")
+                }
+            )
 
+            # Sauvegarde de la prédiction liée au client
             prediction = ChurnPrediction.objects.create(
                 client=client,
                 prediction=result
             )
 
+            # Sérialisation et réponse
             serializer = ChurnPredictionSerializer(prediction)
             return Response(serializer.data)
+
         except requests.exceptions.RequestException as e:
+            return Response({"error": f"Erreur lors de l'appel au service de prédiction: {str(e)}"}, status=500)
+
+        except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
 
 class RecommendationView(APIView):

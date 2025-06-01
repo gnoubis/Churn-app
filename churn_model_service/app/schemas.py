@@ -21,5 +21,13 @@ class ClientData(BaseModel):
     monthly_charges: float = Field(alias="MonthlyCharges")
     total_charges: float = Field(alias="TotalCharges")
 
+class ChurnReason(BaseModel):
+    feature: str
+    importance: float
+    value: str
+    impact: str
+
 class Prediction(BaseModel):
     churn_probability: float
+    reasons: list[ChurnReason]
+    risk_level: str
