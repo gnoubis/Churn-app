@@ -23,10 +23,12 @@ import {
   FormControl,
   InputLabel,
   Grid,
-  AddIcon,
-  EditIcon,
-  DeleteIcon
-} from '../../mui-exports';
+} from '@mui/material';
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+} from '@mui/icons-material';
 import { User, UserRole } from '../../types/user';
 import axios from 'axios';
 import { ElementType } from 'react';

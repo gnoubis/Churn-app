@@ -32,6 +32,7 @@ export const {
   IconButton,
   InputBase,
   InputLabel,
+  LinearProgress,
   List,
   ListItem,
   ListItemButton,

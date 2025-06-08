@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'accounts',
     'predictor',
     'corsheaders',
-
+    'drf_spectacular',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
@@ -213,3 +214,17 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API de Prédiction de Churn',
+    'DESCRIPTION': 'API pour la prédiction de churn, les recommandations et la génération de messages',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'clients', 'description': 'Opérations sur les clients'},
+        {'name': 'prédictions', 'description': 'Prédictions de churn'},
+        {'name': 'recommandations', 'description': 'Recommandations pour les clients'},
+        {'name': 'messages', 'description': 'Génération et gestion des messages'},
+    ],
+}

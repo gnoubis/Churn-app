@@ -65,14 +65,6 @@ import {
   Bar,
 } from 'recharts';
 
-interface Client {
-  id: number;
-  name: string;
-  churn_probability: number;
-  last_activity: string;
-  status: string;
-}
-
 interface ChurnEvolution {
   date: string;
   churn_rate: number;
@@ -93,6 +85,38 @@ const clientDistributionData = [
   { name: 'Clients fidèles', value: 55, color: '#4caf50' },
 ];
 
+// Données pour les clients urgents
+const urgentClientsData = [
+  {
+    id: 1,
+    name: 'Entreprise ABC',
+    riskScore: 89,
+    lastActivity: '2 semaines',
+    status: 'Très élevé',
+  },
+  {
+    id: 2,
+    name: 'Société XYZ',
+    riskScore: 78,
+    lastActivity: '1 semaine',
+    status: 'Élevé',
+  },
+  {
+    id: 3,
+    name: 'Corporation 123',
+    riskScore: 82,
+    lastActivity: '3 semaines',
+    status: 'Très élevé',
+  },
+  {
+    id: 4,
+    name: 'Entreprise DEF',
+    riskScore: 75,
+    lastActivity: '5 jours',
+    status: 'Élevé',
+  },
+];
+
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -102,42 +126,6 @@ const Dashboard: React.FC = () => {
   const [timeframe, setTimeframe] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['churnRate']);
-  const [urgentClients, setUrgentClients] = useState<Client[]>([]);
-
-  const fetchClients = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Non authentifié');
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/api/clients/all/', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-        throw new Error('Erreur lors de la récupération des clients');
-      }
-
-      const data: Client[] = await response.json();
-      // Filtrer les clients avec un taux de churn élevé (> 70%)
-      const highRiskClients = data
-        .filter(client => client.churn_probability > 0.7)
-        .sort((a, b) => b.churn_probability - a.churn_probability)
-        .slice(0, 5); // Prendre les 5 clients les plus à risque
-
-      setUrgentClients(highRiskClients);
-    } catch (err) {
-      console.error('Erreur lors de la récupération des clients:', err);
-    }
-  }, []);
 
   const fetchDashboardStats = useCallback(async () => {
     try {
@@ -172,8 +160,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardStats();
-    fetchClients();
-  }, [fetchDashboardStats, fetchClients]);
+  }, [fetchDashboardStats]);
 
   // Handlers pour les actions principales
   const handleRefresh = useCallback(() => {
@@ -217,9 +204,8 @@ const Dashboard: React.FC = () => {
     );
   }, []);
 
-  const handleClientClick = useCallback((client: Client) => {
+  const handleClientClick = useCallback((client: any) => {
     console.log(`Ouverture des détails pour ${client.name}...`);
-    // Ici vous pouvez ajouter la navigation vers la page de détails du client
   }, []);
 
   const handleViewAllClients = useCallback(() => {
@@ -520,28 +506,28 @@ const Dashboard: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Client</TableCell>
-                  <TableCell>Probabilité de Churn</TableCell>
+                  <TableCell>Score de risque</TableCell>
                   <TableCell>Dernière activité</TableCell>
                   <TableCell>Statut</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {urgentClients.map((client) => (
+                {urgentClientsData.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell>{client.name}</TableCell>
                     <TableCell>
                       <Chip
-                        label={`${(client.churn_probability * 100).toFixed(1)}%`}
-                        color={client.churn_probability > 0.8 ? 'error' : 'warning'}
+                        label={`${client.riskScore}%`}
+                        color={client.riskScore > 80 ? 'error' : 'warning'}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{client.last_activity}</TableCell>
+                    <TableCell>{client.lastActivity}</TableCell>
                     <TableCell>
                       <Chip
-                        label={client.churn_probability > 0.8 ? 'Très élevé' : 'Élevé'}
-                        color={client.churn_probability > 0.8 ? 'error' : 'warning'}
+                        label={client.status}
+                        color={client.status === 'Très élevé' ? 'error' : 'warning'}
                         size="small"
                       />
                     </TableCell>

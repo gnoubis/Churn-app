@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, GlobalStyles } from './mui-exports';
 import Layout from './components/layout/Layout';
-import Dashboard from './components/dashboard/Dashboard';
+import Dashboard from './pages/Dashboard';
 import ClientList from './components/clients/ClientList';
 import Login from './components/auth/Login';
 import Profile from './components/user/Profile';

@@ -27,6 +27,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import MessageIcon from '@mui/icons-material/Message';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import GridItem from '../common/GridItem';
+import { Theme } from '@mui/material/styles';
 
 interface Client {
   id: string;
@@ -246,7 +247,7 @@ const ClientRecommendations: React.FC = () => {
                 sx={{
                   whiteSpace: 'pre-wrap',
                   fontFamily: 'inherit',
-                  backgroundColor: (theme) => theme.palette.grey[50],
+                  backgroundColor: (theme: Theme) => theme.palette.grey[50],
                   p: 2,
                   borderRadius: 1
                 }}
