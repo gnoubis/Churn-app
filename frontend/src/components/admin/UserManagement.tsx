@@ -156,7 +156,7 @@ const UserManagement: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Nom d'utilisateur</TableCell>
+              <TableCell>Nom d&apos;utilisateur</TableCell>
               <TableCell>Nom complet</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Rôle</TableCell>

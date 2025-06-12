@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -7,6 +7,7 @@ import {
   Typography,
   Paper,
   Alert,
+  CircularProgress, // Ajout pour le loader
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,14 +16,19 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false); // Ajout du state loading
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true); // Démarre le loading
     try {
       // Implémentez la logique de connexion ici
+      await new Promise((res) => setTimeout(res, 1000)); // Simulation d'appel API
       navigate('/dashboard');
     } catch (err) {
       setError('Erreur lors de la connexion');
+    } finally {
+      setLoading(false); // Arrête le loading
     }
   };
 
@@ -70,7 +76,7 @@ const Login: React.FC = () => {
               autoComplete="email"
               autoFocus
               value={email}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <TextField
               margin="normal"
@@ -82,15 +88,17 @@ const Login: React.FC = () => {
               id="password"
               autoComplete="current-password"
               value={password}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={loading} // Désactive le bouton pendant le chargement
+              startIcon={loading ? <CircularProgress size={20} /> : null}
             >
-              Se connecter
+              {loading ? 'Connexion...' : 'Se connecter'}
             </Button>
           </Box>
         </Paper>
@@ -99,4 +107,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Login;

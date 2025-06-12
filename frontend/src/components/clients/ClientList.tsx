@@ -654,7 +654,7 @@ const ClientList: React.FC = () => {
                   onClick={handleGenerateMessage}
                   disabled={loading}
                 >
-                  Générer avec l'IA
+                  Générer avec l&apos;IA
                 </Button>
                 <Button
                   startIcon={<ContentCopy />}

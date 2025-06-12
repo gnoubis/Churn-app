@@ -587,7 +587,7 @@ const ClientPredictions: React.FC = () => {
                     size="large"
                     sx={{ mt: 2 }}
                   >
-                    Lancer l'analyse
+                    Lancer l&apos;analyse
                   </Button>
                 </Box>
               </CardContent>
@@ -633,7 +633,7 @@ const ClientPredictions: React.FC = () => {
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                         <Typography variant="h6">
-                          Résultats de l'analyse
+                          Résultats de l&apos;analyse
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2 }}>
                           <Button
@@ -692,11 +692,11 @@ const ClientPredictions: React.FC = () => {
                         <Card sx={{ mb: 3 }}>
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
-                              Résultats de l'analyse pour {client.client_name}
+                              Résultats de l&apos;analyse pour {client.client_name}
                             </Typography>
                             {hasError && (
                               <Alert severity="warning" sx={{ mb: 2 }}>
-                                L'analyse de sentiment n'est pas disponible pour ce client.
+                                L&apos;analyse de sentiment n&apos;est pas disponible pour ce client.
                               </Alert>
                             )}
                             <Grid container spacing={3}>
@@ -735,7 +735,7 @@ const ClientPredictions: React.FC = () => {
                                 <Grid item xs={12} md={4}>
                                   <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
                                     <Typography variant="subtitle2" gutterBottom>
-                                      Facteurs d'influence
+                                      Facteurs d&apos;influence
                                     </Typography>
                                     <List dense>
                                       {client.results.churn.reasons.map((reason, idx: number) => (

@@ -102,14 +102,20 @@ class SentimentAnalysis(models.Model):
         return f"Sentiment pour {self.client.name}: {self.sentiment}"
 
 class GeneratedMessage(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE)
-    tone = models.CharField(max_length=50)
-    channel = models.CharField(max_length=20)
-    recommended_offer = models.TextField()
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, null=True, blank=True)
+    # Champs pour le format standard
+    tone = models.CharField(max_length=50, blank=True, null=True)
+    channel = models.CharField(max_length=20, blank=True, null=True)
+    recommended_offer = models.TextField(blank=True, null=True)
+    # Champs pour le format personnalisé
+    prompt = models.TextField(blank=True, null=True)
+    temperature = models.FloatField(default=0.7, null=True)
+    max_tokens = models.IntegerField(default=200, null=True)
+    # Champs communs
     message = models.TextField()
-    custom_text = models.TextField(blank=True)  # Texte personnalisé optionnel
+    model_response = models.JSONField(default=dict)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Message for {self.client.name} via {self.channel}"
+        return f"Message for {self.client.name if self.client else 'Custom'} generated at {self.timestamp}"
 

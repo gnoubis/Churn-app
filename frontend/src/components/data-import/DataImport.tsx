@@ -509,7 +509,7 @@ const DataImport: React.FC = () => {
             <Grid container spacing={2}>
               <GridItem xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Type d'ERP</InputLabel>
+                  <InputLabel>Type d&apos;ERP</InputLabel>
                   <Select
                     value={erpConfig.type}
                     onChange={(e) => handleErpConfigChange('type')(e as any)}
@@ -546,7 +546,7 @@ const DataImport: React.FC = () => {
                   Informations importantes :
                 </Typography>
                 <Typography variant="body2">
-                  • Assurez-vous d'avoir les droits d'accès nécessaires
+                  • Assurez-vous d&apos;avoir les droits d&apos;accès nécessaires
                   <br />
                   • Utilisez une connexion sécurisée (SSL/TLS)
                   <br />
@@ -688,7 +688,7 @@ const DataImport: React.FC = () => {
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
-                    <InputLabel>Heure d'exécution</InputLabel>
+                    <InputLabel>Heure d&apos;exécution</InputLabel>
                     <Select
                       value="00:00"
                       label="Heure d'exécution"
@@ -778,7 +778,7 @@ const DataImport: React.FC = () => {
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CloudUploadIcon color="primary" />
-          <Typography variant="h6">Configuration de l'import CSV</Typography>
+          <Typography variant="h6">Configuration de l&apos;import CSV</Typography>
         </Box>
       </DialogTitle>
       <DialogContent>
@@ -919,7 +919,7 @@ const DataImport: React.FC = () => {
             <Grid container spacing={2}>
               <GridItem xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Type d'ERP</InputLabel>
+                  <InputLabel>Type d&apos;ERP</InputLabel>
                   <Select
                     value={erpConfig.type}
                     onChange={(e) => handleErpConfigChange('type')(e as any)}
@@ -995,7 +995,7 @@ const DataImport: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Configuration de l'API</DialogTitle>
+        <DialogTitle>Configuration de l&apos;API</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>

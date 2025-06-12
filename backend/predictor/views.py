@@ -196,25 +196,151 @@ class MessageGenerationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        payload = request.data
         try:
-            response = requests.post(settings.MESSAGE_URL, json=payload)
-            result = response.json()
+            # Validation des champs requis
+            required_fields = ['client_name', 'recommended_offer', 'channel', 'tone']
+            missing_fields = [field for field in required_fields if field not in request.data]
+            if missing_fields:
+                return Response({
+                    'error': f'Champs requis manquants: {", ".join(missing_fields)}'
+                }, status=400)
 
-            client, _ = Client.objects.get_or_create(name=payload.get("client_name"))
-
-            message = GeneratedMessage.objects.create(
-                client=client,
-                tone=payload.get("tone", "inconnu"),
-                channel=payload.get("channel", "inconnu"),
-                recommended_offer=payload.get("recommended_offer", ""),
-                message=result.get("message", "")
+            # Récupération ou création du client
+            client, _ = Client.objects.get_or_create(
+                name=request.data['client_name'],
+                defaults={
+                    'email': request.data.get('client_email', ''),
+                    'phone': request.data.get('phone', '')
+                }
             )
 
-            serializer = GeneratedMessageSerializer(message)
-            return Response(serializer.data)
+            # Formatage des données pour le service
+            message_data = {
+                'client_name': client.name,
+                'recommended_offer': request.data['recommended_offer'],
+                'channel': request.data['channel'],
+                'tone': request.data['tone'],
+                'client_email': request.data.get('client_email', client.email)
+            }
+
+            # Appel au service de génération de messages
+            response = requests.post(settings.MESSAGE_URL, json=message_data)
+            response.raise_for_status()
+            result = response.json()
+
+            # Sauvegarde du message généré
+            message = GeneratedMessage.objects.create(
+                client=client,
+                tone=message_data['tone'],
+                channel=message_data['channel'],
+                recommended_offer=message_data['recommended_offer'],
+                message=result.get('message', ''),
+                model_response=result
+            )
+
+            # Préparation de la réponse
+            response_data = {
+                'id': message.id,
+                'client_name': client.name,
+                'tone': message.tone,
+                'channel': message.channel,
+                'recommended_offer': message.recommended_offer,
+                'timestamp': message.timestamp,
+                'message': message.message,
+                'model_response': message.model_response
+            }
+
+            return Response(response_data)
+
         except requests.exceptions.RequestException as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({
+                'error': f'Erreur lors de l\'appel au service de génération de messages: {str(e)}'
+            }, status=500)
+        except Exception as e:
+            return Response({
+                'error': f'Une erreur inattendue est survenue: {str(e)}'
+            }, status=500)
+
+
+class CustomMessageGenerationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Validation des champs requis
+            if 'prompt' not in request.data:
+                return Response({
+                    'error': 'Le champ prompt est requis'
+                }, status=400)
+
+            # Validation des paramètres optionnels
+            try:
+                temperature = float(request.data.get('temperature', 0.7))
+                if not 0 <= temperature <= 1:
+                    return Response({
+                        'error': 'La température doit être comprise entre 0 et 1'
+                    }, status=400)
+            except ValueError:
+                return Response({
+                    'error': 'La température doit être un nombre entre 0 et 1'
+                }, status=400)
+
+            try:
+                max_tokens = int(request.data.get('max_tokens', 200))
+                if max_tokens <= 0:
+                    return Response({
+                        'error': 'Le nombre maximum de tokens doit être positif'
+                    }, status=400)
+            except ValueError:
+                return Response({
+                    'error': 'Le nombre maximum de tokens doit être un entier positif'
+                }, status=400)
+
+            # Formatage des données pour le service
+            message_data = {
+                'prompt': request.data['prompt'],
+                'temperature': temperature,
+                'max_tokens': max_tokens
+            }
+
+            # Appel au service de génération de messages personnalisés
+            response = requests.post(settings.CUSTOM_MESSAGE_URL, json=message_data)
+            response.raise_for_status()
+            result = response.json()
+
+            # Sauvegarde du message généré
+            message = GeneratedMessage.objects.create(
+                client=None,  # Pas de client associé pour les messages personnalisés
+                prompt=message_data['prompt'],
+                temperature=message_data['temperature'],
+                max_tokens=message_data['max_tokens'],
+                message=result.get('message', ''),
+                model_response=result
+            )
+
+            # Préparation de la réponse
+            response_data = {
+                'id': message.id,
+                'prompt': message.prompt,
+                'temperature': message.temperature,
+                'max_tokens': message.max_tokens,
+                'timestamp': message.timestamp,
+                'message': message.message,
+                'model_response': {
+                    k: v for k, v in result.items() if k != 'message'  # Exclure le message du model_response
+                }
+            }
+
+            return Response(response_data)
+
+        except requests.exceptions.RequestException as e:
+            return Response({
+                'error': f'Erreur lors de l\'appel au service de génération de messages personnalisés: {str(e)}'
+            }, status=500)
+        except Exception as e:
+            return Response({
+                'error': f'Une erreur inattendue est survenue: {str(e)}'
+            }, status=500)
 
 
 class ClientHistoryView(RetrieveAPIView):

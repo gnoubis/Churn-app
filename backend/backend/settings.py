@@ -169,10 +169,12 @@ DJOSER = {
 
 load_dotenv()
 
-CHURN_URL = os.getenv("CHURN_URL")
-RECOMMENDER_URL = os.getenv("RECOMMENDER_URL")
-SENTIMENT_URL = os.getenv("SENTIMENT_URL")
-MESSAGE_URL = os.getenv("MESSAGE_URL")
+# URLs des services
+CHURN_URL = 'http://localhost:8001/predict/'
+RECOMMENDER_URL = 'http://localhost:8002/recommend/'
+SENTIMENT_URL = 'http://localhost:8003/analyze/'
+MESSAGE_URL = 'http://127.0.0.1:8004/generate-message/'
+CUSTOM_MESSAGE_URL = 'http://localhost:8004/generate-custom-text/'
 
 
 CSRF_TRUSTED_ORIGINS = [

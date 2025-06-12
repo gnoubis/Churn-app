@@ -64,6 +64,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { TooltipProps } from 'recharts';
 
 interface ChurnEvolution {
   date: string;
@@ -76,6 +77,14 @@ interface DashboardStats {
   current_churn_rate: number;
   churn_evolution: ChurnEvolution[];
   total_clients: number;
+}
+
+interface CustomTooltipProps extends TooltipProps<number, string> {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+  }>;
 }
 
 // Données pour le graphique circulaire
@@ -116,6 +125,25 @@ const urgentClientsData = [
     status: 'Élevé',
   },
 ];
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <Box sx={{ 
+        bgcolor: 'background.paper', 
+        p: 1, 
+        border: 1, 
+        borderColor: 'divider',
+        borderRadius: 1
+      }}>
+        <Typography variant="body2">
+          {`${payload[0].name}: ${payload[0].value}%`}
+        </Typography>
+      </Box>
+    );
+  }
+  return null;
+};
 
 const Dashboard: React.FC = () => {
   const theme = useTheme();
@@ -456,18 +484,32 @@ const Dashboard: React.FC = () => {
               <PieChart>
                 <Pie
                   data={clientDistributionData}
+                  dataKey="value"
+                  nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
                   outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
+                  fill="#8884d8"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
                   {clientDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.name === 'Clients à risque' ? theme.palette.error.main : 
+                           entry.name === 'Clients neutres' ? theme.palette.warning.main : 
+                           theme.palette.success.main} 
+                    />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `${value}%`} />
+                <RechartsTooltip 
+                  formatter={(value: number) => `${value}%`}
+                  contentStyle={{
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: theme.shape.borderRadius,
+                    padding: theme.spacing(1)
+                  }}
+                />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
