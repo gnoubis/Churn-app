@@ -8,6 +8,7 @@ from rest_framework.generics import RetrieveAPIView
 from django.core.files.storage import default_storage
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from .models import Client, ChurnPrediction, Recommendation, SentimentAnalysis, GeneratedMessage
 from .serializers import (
     ClientHistorySerializer,
@@ -16,6 +17,68 @@ from .serializers import (
     SentimentAnalysisSerializer,
     GeneratedMessageSerializer
 )
+from django.core.mail import send_mail
+
+
+class GeneratedMessageListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GeneratedMessageSerializer
+
+    def get_queryset(self):
+        client_id = self.request.query_params.get('client_id')
+        if client_id:
+            return GeneratedMessage.objects.filter(client__id=client_id).order_by('-timestamp')
+        return GeneratedMessage.objects.all().order_by('-timestamp')
+    
+class SendEmailAndStoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        client_name = request.data.get('client_name')
+        email = request.data.get('email')
+        subject = request.data.get('subject', 'Message Chronex')
+        message = request.data.get('message')
+        tone = request.data.get('tone', '')
+        channel = 'email'
+        recommended_offer = request.data.get('recommended_offer', '')
+        prompt = request.data.get('prompt', None)
+        temperature = request.data.get('temperature', 0.7)
+        max_tokens = request.data.get('max_tokens', 200)
+
+        if not all([client_name, email, message]):
+            return Response({'error': 'client_name, email et message sont requis.'}, status=400)
+
+        # Récupérer ou créer le client
+        client, _ = Client.objects.get_or_create(
+            name=client_name,
+            defaults={'email': email}
+        )
+
+        try:
+            send_mail(
+                subject,
+                message,
+                'no-reply@chronex-app.com',  # expéditeur (à adapter)
+                [email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response({'error': f'Erreur lors de l\'envoi de l\'email: {str(e)}'}, status=500)
+
+        # Stocker le message envoyé avec tous les champs du modèle
+        GeneratedMessage.objects.create(
+            client=client,
+            tone=tone,
+            channel=channel,
+            recommended_offer=recommended_offer,
+            prompt=prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            message=message,
+            model_response={'send_status': 'email_sent'}
+        )
+
+        return Response({'status': 'email_sent', 'client': client.name, 'client_id': client.id, 'email': email})
 
 
 class ChurnPredictionView(APIView):

@@ -142,6 +142,341 @@ interface Filters {
   riskLevel: 'all' | 'high' | 'medium' | 'low';
 }
 
+interface GenerateMessageDialogProps {
+  open: boolean;
+  onClose: () => void;
+  client: Client | null;
+  onMessageGenerated: (message: string) => void;
+}
+
+const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
+  open,
+  onClose,
+  client,
+  onMessageGenerated
+}) => {
+  const [tab, setTab] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedMessage, setGeneratedMessage] = useState<string | null>(null);
+  
+  // Pour la génération basée sur les recommandations
+  const [selectedRecommendation, setSelectedRecommendation] = useState<string>('');
+  const [channel, setChannel] = useState<string>('email');
+  const [tone, setTone] = useState<string>('formel');
+  
+  // Pour la génération personnalisée
+  const [prompt, setPrompt] = useState('');
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(200);
+  const [subject, setSubject] = useState('Bienvenue');
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTab(newValue);
+    setGeneratedMessage(null);
+    setError(null);
+  };
+
+  const [successSnackbar, setSuccessSnackbar] = useState(false);
+  const generateFromRecommendation = async () => {
+    if (!client || !selectedRecommendation) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Vous devez être connecté pour générer un message.');
+      }
+
+      // Vérification des champs requis
+      if (!client.name || !selectedRecommendation || !channel || !tone) {
+        throw new Error('Tous les champs sont requis : nom du client, offre recommandée, canal et ton');
+      }
+
+      const requestBody = {
+        client_name: client.name,
+        recommended_offer: selectedRecommendation,
+        channel: channel,
+        tone: tone,
+        client_email: client.email || '' // Email optionnel
+      };
+
+      console.log('Données envoyées à l\'API:', requestBody); // Pour le débogage
+
+      const response = await fetch('http://127.0.0.1:8000/api/message-generation/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la génération du message');
+      }
+
+      const data = await response.json();
+      setGeneratedMessage(data.message);
+      onMessageGenerated(data.message);
+    } catch (err) {
+      console.error('Erreur détaillée:', err);
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateCustomMessage = async () => {
+    if (!prompt) {
+      setError('Veuillez saisir un prompt pour générer le message');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Vous devez être connecté pour générer un message.');
+      }
+
+      const requestBody = {
+        prompt: prompt,
+        temperature: 0.7, // Valeur par défaut, peut être ajustée
+        max_tokens: 200  // Valeur par défaut, peut être ajustée
+      };
+
+      console.log('Données envoyées à l\'API:', requestBody); // Pour le débogage
+
+      const response = await fetch('http://127.0.0.1:8000/api/generate-custom-text/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la génération du message');
+      }
+
+      const data = await response.json();
+      setGeneratedMessage(data.message);
+      onMessageGenerated(data.message);
+    } catch (err) {
+      console.error('Erreur détaillée:', err);
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>Générer un message</DialogTitle>
+      <DialogContent>
+        <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 2 }}>
+          <Tab label="Basé sur les recommandations" />
+          <Tab label="Message personnalisé" />
+        </Tabs>
+
+        {tab === 0 && (
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Recommandation</InputLabel>
+              <Select
+                value={selectedRecommendation}
+                onChange={(e) => setSelectedRecommendation(e.target.value)}
+                label="Recommandation"
+              >
+                {client?.recommendations.map((rec, index) => (
+                  <MenuItem key={index} value={rec}>
+                    {rec}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Canal</InputLabel>
+              <Select
+                value={channel}
+                onChange={(e) => setChannel(e.target.value)}
+                label="Canal"
+              >
+                <MenuItem value="email">Email</MenuItem>
+                <MenuItem value="sms">SMS</MenuItem>
+                <MenuItem value="chat">Chat</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Tonalité</InputLabel>
+              <Select
+                value={tone}
+                onChange={(e) => setTone(e.target.value)}
+                label="Tonalité"
+              >
+                <MenuItem value="formel">Formel</MenuItem>
+                <MenuItem value="informel">Informel</MenuItem>
+                <MenuItem value="amical">Amical</MenuItem>
+                <MenuItem value="professionnel">Professionnel</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        )}
+
+        {tab === 1 && (
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label="Température"
+              value={temperature}
+              onChange={(e) => setTemperature(Number(e.target.value))}
+              inputProps={{ min: 0, max: 1, step: 0.1 }}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label="Nombre maximum de tokens"
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(Number(e.target.value))}
+              inputProps={{ min: 1, max: 1000 }}
+            />
+          </Box>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {generatedMessage && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Message généré:
+            </Typography>
+            {channel === 'email' && (
+              <TextField
+                fullWidth
+                label="Sujet"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+            )}
+            <TextField
+              fullWidth
+              multiline
+              rows={6}
+              value={generatedMessage}
+              onChange={e => setGeneratedMessage(e.target.value)}
+              sx={{ mb: 2 }}
+              label={`Prévisualisation et édition du ${channel === 'email' ? 'mail' : 'SMS'}`}
+            />
+        
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Button
+                startIcon={<SendIcon />}
+                variant="contained"
+                color="primary"
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const token = localStorage.getItem('accessToken');
+                    if (!token) throw new Error('Token manquant, veuillez vous reconnecter.');
+                    const response = await fetch('http://localhost:8000/api/send-email/', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                        client_name: client?.name,
+                        email: client?.email,
+                        subject: subject,
+                        message: generatedMessage,
+                        tone: tone,
+                        recommended_offer: selectedRecommendation || "",
+                      }),
+                    });
+                    if (!response.ok) throw new Error('Erreur lors de l\'envoi');
+                    setError(null);
+                    setSuccessSnackbar(true);
+                    onClose();
+                  } catch (err) {
+                    setError('Erreur lors de l\'envoi du message');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading || !generatedMessage}
+              >
+                Envoyer
+              </Button>
+              <Button
+                startIcon={<ContentCopy />}
+                variant="outlined"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedMessage || '');
+                }}
+                disabled={!generatedMessage}
+              >
+                Copier
+              </Button>
+            </Box>
+            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+              Aperçu final:
+            </Typography>
+            <Paper variant="outlined" sx={{ p: 2, whiteSpace: 'pre-wrap', background: '#fafafa' }}>
+              {generatedMessage}
+            </Paper>
+            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Annuler</Button>
+        <Button
+          onClick={tab === 0 ? generateFromRecommendation : generateCustomMessage}
+          variant="contained"
+          disabled={loading || (tab === 0 && !selectedRecommendation) || (tab === 1 && !prompt)}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Générer'}
+        </Button>
+      </DialogActions>
+      <Snackbar
+        open={successSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setSuccessSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSuccessSnackbar(false)} severity="success" variant="filled">
+          {channel === 'email' ? 'Email envoyé avec succès !' : 'SMS envoyé avec succès !'}
+        </Alert>
+      </Snackbar>
+    </Dialog>
+  );
+};
+
 const ClientList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -161,6 +496,9 @@ const ClientList: React.FC = () => {
     riskLevel: 'all',
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [generateMessageOpen, setGenerateMessageOpen] = useState(false);
+  const [selectedClientForMessage, setSelectedClientForMessage] = useState<Client | null>(null);
+
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -171,33 +509,46 @@ const ClientList: React.FC = () => {
     setPage(0);
   };
 
-  const handleGenerateMessage = async () => {
+    const handleGenerateMessage = async () => {
     if (!selectedClient) return;
     setLoading(true);
     try {
-      // Simulation d'appel API au backend pour la génération IA
-      const response = await fetch('/api/generate-message', {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Vous devez être connecté pour générer un message.');
+      }
+      // Utilise la première recommandation par défaut, ou laisse vide si aucune
+      const recommended_offer = selectedClient.recommendations[0] || '';
+      const channel = messageType === 'email' ? 'email' : 'sms';
+      const tone = 'formel'; // ou propose un choix à l'utilisateur
+      const client_email = selectedClient.email || '';
+  
+      const response = await fetch('http://127.0.0.1:8000/api/message-generation/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          clientId: selectedClient.id,
-          messageType: messageType,
-          recommendations: selectedClient.recommendations,
+          client_name: selectedClient.name,
+          recommended_offer,
+          channel,
+          tone,
+          client_email,
         }),
       });
-
+  
       if (!response.ok) {
-        throw new Error('Erreur lors de la génération du message');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la génération du message');
       }
-
+  
       const data = await response.json();
       setGeneratedContent(data);
-      setMessageContent(data.content);
+      setMessageContent(data.message);
     } catch (error) {
       console.error('Erreur:', error);
-      setSnackbarMessage('Erreur lors de la génération du message');
+      setSnackbarMessage(error instanceof Error ? error.message : 'Erreur lors de la génération du message');
       setSnackbarSeverity('error');
       setOpenSnackbar(true);
     } finally {
@@ -308,6 +659,21 @@ const ClientList: React.FC = () => {
       search: '',
       riskLevel: 'all',
     });
+  };
+
+  const handleOpenGenerateMessage = (client: Client) => {
+    setSelectedClientForMessage(client);
+    setGenerateMessageOpen(true);
+  };
+
+  const handleCloseGenerateMessage = () => {
+    setGenerateMessageOpen(false);
+    setSelectedClientForMessage(null);
+  };
+
+  const handleMessageGenerated = (message: string) => {
+    // Vous pouvez ajouter ici la logique pour sauvegarder le message généré
+    console.log('Message généré:', message);
   };
 
   return (
@@ -424,6 +790,11 @@ const ClientList: React.FC = () => {
                               <MessageIcon />
                             </IconButton>
                           </Tooltip>
+                          {/* <Tooltip title="Générer un message personnalisé">
+                            <IconButton onClick={() => handleOpenGenerateMessage(client)}>
+                              <AutoAwesomeIcon color="secondary" />
+                            </IconButton>
+                          </Tooltip> */}
                         </TableCell>
                       </TableRow>
                       <TableRow>
@@ -559,6 +930,16 @@ const ClientList: React.FC = () => {
                   Générer avec l&apos;IA
                 </Button>
                 <Button
+                  startIcon={<AutoAwesomeIcon color="secondary" />}
+                  variant="outlined"
+                  onClick={() => {
+                    handleCloseDialog();
+                    if (selectedClient) handleOpenGenerateMessage(selectedClient);
+                  }}
+                >
+                  Prompt personnalisé
+                </Button>
+                <Button
                   startIcon={<ContentCopy />}
                   variant="outlined"
                   onClick={handleCopyContent}
@@ -596,6 +977,13 @@ const ClientList: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <GenerateMessageDialog
+        open={generateMessageOpen}
+        onClose={handleCloseGenerateMessage}
+        client={selectedClientForMessage}
+        onMessageGenerated={handleMessageGenerated}
+      />
     </Box>
   );
 };

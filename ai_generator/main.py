@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 
 class MessageRequest(BaseModel):

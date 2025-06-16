@@ -6,36 +6,56 @@ import {
   Typography,
   Container,
   Paper,
-  Alert
+  Alert,
+  CircularProgress
 } from '../../mui';
 import { useNavigate } from 'react-router-dom';
-import authService from '../../services/authService';
+import api from '../../services/api';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
-      console.log('Tentative de connexion...');
-      const user = await authService.login({ username, password });
-      console.log('Connexion réussie, utilisateur:', user);
+      const response = await api.post('/auth/jwt/create/', {
+        username,
+        password,
+      });
+
+      const { access, refresh } = response.data;
       
-      if (user && authService.isAuthenticated()) {
-        console.log('Redirection vers le tableau de bord...');
-        navigate('/dashboard', { replace: true });
+      // Stocker les tokens
+      localStorage.setItem('accessToken', access);
+      localStorage.setItem('refreshToken', refresh);
+      
+      // Récupérer les informations de l'utilisateur
+      const userResponse = await api.get('/auth/users/me/', {
+        headers: {
+          Authorization: `Bearer ${access}`
+        }
+      });
+      
+      // Stocker les informations utilisateur
+      localStorage.setItem('user', JSON.stringify(userResponse.data));
+      
+      // Rediriger vers le tableau de bord
+      navigate('/dashboard', { replace: true });
+    } catch (err: any) {
+      if (err.response) {
+        setError(err.response.data.detail || 'Erreur de connexion');
       } else {
-        console.error('Authentification échouée après login');
-        setError('Erreur d\'authentification');
+        setError('Une erreur est survenue lors de la connexion');
       }
-    } catch (err) {
-      console.error('Erreur lors de la connexion:', err);
-      setError('Nom d\'utilisateur ou mot de passe incorrect');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,7 +73,7 @@ const Login: React.FC = () => {
           <Typography component="h1" variant="h5" align="center" gutterBottom>
             Connexion
           </Typography>
-          
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -90,8 +110,13 @@ const Login: React.FC = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
             >
-              Se connecter
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Se connecter'
+              )}
             </Button>
           </Box>
         </Paper>

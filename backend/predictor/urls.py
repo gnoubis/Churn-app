@@ -10,6 +10,8 @@ from .views import (
     FullClientProcessingView,
     AllClientsDataView,
     DashboardStatsView,
+    SendEmailAndStoreView,
+    GeneratedMessageListView
 )
 
 urlpatterns = [
@@ -23,4 +25,6 @@ urlpatterns = [
     path('clients/process/', FullClientProcessingView.as_view(), name='process-client'),
     path('clients/all/', AllClientsDataView.as_view(), name='all-clients-data'),
     path('dashboard/stats/', DashboardStatsView.as_view(), name='dashboard-stats'),
+    path('send-email/', SendEmailAndStoreView.as_view(), name='send_email_and_store'),
+    path('messages/', GeneratedMessageListView.as_view(), name='generated_messages_list'),
 ]
