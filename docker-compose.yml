@@ -1,0 +1,60 @@
+services:
+  django:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+
+  churn_model_service:
+    build:
+      context: ./churn_model_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./churn_model_service:/app
+    ports:
+      - "8001:8000"
+
+  ai_generator:
+    build:
+      context: ./ai_generator
+      dockerfile: Dockerfile
+    volumes:
+      - ./ai_generator:/app
+    ports:
+      - "8004:8000"
+
+  recommendation_service:
+    build:
+      context: ./recommendation_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./recommendation_service:/app
+    ports:
+      - "8002:8000"
+
+  sentiment_service:
+    build:
+      context: ./sentiment_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./sentiment_service:/app
+    ports:
+      - "8003:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+
+networks:
+  default:
+    driver: bridge

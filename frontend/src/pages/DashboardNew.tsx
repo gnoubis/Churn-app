@@ -145,7 +145,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   return null;
 };
 
-const Dashboard: React.FC = () => {
+const DashboardNew: React.FC = () => {
   const theme = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -603,4 +603,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default DashboardNew; 

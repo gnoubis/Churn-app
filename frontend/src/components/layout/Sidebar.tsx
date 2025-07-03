@@ -55,29 +55,12 @@ const menuItems = [
     description: 'Import et mise à jour des données',
   },
   {
-    text: 'Analyse des sentiments',
-    icon: <MoodOutlinedIcon />,
-    path: '/sentiments',
-    description: 'Analyse des retours clients',
-  },
-  {
-    text: 'Analytics',
-    icon: <AnalyticsIcon />,
-    path: '/analytics',
-    description: 'Statistiques et analyses détaillées',
-  },
-  {
     text: 'Communications',
     icon: <EmailIcon />,
     path: '/communications',
     description: 'Gestion des communications clients',
   },
-  {
-    text: 'Recommandations',
-    icon: <RecommendIcon />,
-    path: '/recommendations',
-    description: 'Suggestions d\'actions préventives',
-  },
+
 ];
 
 const Sidebar = () => {
@@ -137,7 +120,7 @@ const Sidebar = () => {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              App Churn
+              ChurnSyst
             </Typography>
           )}
           <IconButton onClick={handleDrawerToggle}>

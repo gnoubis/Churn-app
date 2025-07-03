@@ -26,9 +26,10 @@ class GeneratedMessageListView(ListAPIView):
 
     def get_queryset(self):
         client_id = self.request.query_params.get('client_id')
+        queryset = GeneratedMessage.objects.select_related('client').order_by('-timestamp')
         if client_id:
-            return GeneratedMessage.objects.filter(client__id=client_id).order_by('-timestamp')
-        return GeneratedMessage.objects.all().order_by('-timestamp')
+            return queryset.filter(client__id=client_id)
+        return queryset
     
 class SendEmailAndStoreView(APIView):
     permission_classes = [IsAuthenticated]

@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import {
   Box,
   Typography,
@@ -107,10 +107,29 @@ interface NewCommunication {
   content: string;
 }
 
+interface ApiMessage {
+  id: number;
+  client: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  tone: string;
+  channel: string;
+  recommended_offer: string;
+  prompt: string | null;
+  temperature: number;
+  max_tokens: number;
+  message: string;
+  model_response: { send_status: string };
+  timestamp: string;
+}
+
 const Communications: React.FC = () => {
   const theme = useTheme();
   const [communicationType, setCommunicationType] = useState<'all' | 'email' | 'message' | 'phone'>('all');
-  const [selectedMessage, setSelectedMessage] = useState<Communication | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Communication | ApiMessage | null>(null);
   const [openNewComm, setOpenNewComm] = useState(false);
   const [newComm, setNewComm] = useState<NewCommunication>({
     type: 'email',
@@ -118,6 +137,31 @@ const Communications: React.FC = () => {
     subject: '',
     content: '',
   });
+
+  const [apiMessages, setApiMessages] = useState<ApiMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  
+  useEffect(() => {
+    const fetchMessages = async () => {
+      setLoadingMessages(true);
+      try {
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch('http://localhost:8000/api/messages/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error('Erreur lors du chargement des messages');
+        const data = await response.json();
+        setApiMessages(data);
+      } catch (err) {
+        // Optionnel: afficher une erreur
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+    fetchMessages();
+  }, []);
 
   const handleCommunicationTypeChange = (event: React.SyntheticEvent, newValue: 'all' | 'email' | 'message' | 'phone') => {
     if (newValue !== null) {
@@ -163,6 +207,8 @@ const Communications: React.FC = () => {
     handleCloseNewComm();
   };
 
+
+  
   const getIconByType = (type: string) => {
     switch (type) {
       case 'email':
@@ -297,78 +343,91 @@ const Communications: React.FC = () => {
           </Box>
 
           <List sx={{ width: '100%' }}>
-            {filteredCommunications.map((comm, index) => (
-              <React.Fragment key={comm.id}>
-                {index > 0 && <Divider component="li" />}
-                <ListItem
-                  alignItems="flex-start"
-                  onClick={() => handleMessageClick(comm)}
-                  sx={{
-                    py: 2,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.05),
-                    },
-                  }}
-                >
-                  <ListItemIcon>
-                    {getIconByType(comm.type)}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {comm.subject}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip 
-                            size="small" 
-                            label={comm.status} 
-                            color={getStatusColor(comm.status) as any}
-                          />
+            {loadingMessages && (
+              <ListItem>
+                <ListItemText primary="Chargement des messages..." />
+              </ListItem>
+            )}
+            {apiMessages
+              .filter(
+                msg =>
+                  (communicationType === 'all' || msg.channel === communicationType) &&
+                  msg.model_response &&
+                  typeof msg.model_response.send_status === 'string' &&
+                  msg.model_response.send_status // doit exister et ne pas être vide
+              )
+              .map((msg, index) => (
+                <React.Fragment key={msg.id}>
+                  {index > 0 && <Divider component="li" />}
+                  <ListItem
+                    alignItems="flex-start"
+                    sx={{
+                      py: 2,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                      },
+                    }}
+                    onClick={() => setSelectedMessage(msg)}
+                  >
+                    <ListItemIcon>
+                      {msg.channel === 'email' ? <EmailIcon color="primary" /> : <MessageIcon color="info" />}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            {msg.message.startsWith('Subject:')
+                              ? msg.message.split('\n')[0].replace('Subject:', '').trim()
+                              : 'Message'}
+                          </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            <Chip
+                              size="small"
+                              label={msg.model_response?.send_status === 'email_sent' ? 'Email envoyé' : 'SMS envoyé'}
+                              color="success"
+                            />
                             <Typography variant="caption" color="text.secondary">
-                              {comm.date} {comm.time}
+                              {new Date(msg.timestamp).toLocaleString()}
                             </Typography>
                           </Box>
                         </Box>
-                      </Box>
-                    }
-                    secondary={
-                      <>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          color="text.primary"
-                          sx={{ display: 'block', mb: 0.5 }}
-                        >
-                          {comm.client}
-                        </Typography>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {comm.content}
-                        </Typography>
-                      </>
-                    }
-                  />
-                </ListItem>
-              </React.Fragment>
-            ))}
+                      }
+                      secondary={
+                        <>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.primary"
+                            sx={{ display: 'block', mb: 0.5 }}
+                          >
+                            {msg.client && msg.client.name
+                              ? `${msg.client.name} — ${msg.client.email ?? ''}`
+                              : 'Client inconnu'}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {msg.message}
+                          </Typography>
+                        </>
+                      }
+                    />
+                  </ListItem>
+                </React.Fragment>
+              ))}
           </List>
         </CardContent>
       </Card>
 
-      {/* Dialog pour afficher le détail d'un message */}
       <Dialog
         open={!!selectedMessage}
         onClose={handleCloseMessage}
@@ -379,7 +438,13 @@ const Communications: React.FC = () => {
           <>
             <DialogTitle>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">{selectedMessage.subject}</Typography>
+                <Typography variant="h6">
+                  {'message' in selectedMessage && selectedMessage.message?.startsWith('Subject:')
+                    ? selectedMessage.message.split('\n')[0].replace('Subject:', '').trim()
+                    : 'subject' in selectedMessage && selectedMessage.subject
+                      ? selectedMessage.subject
+                      : 'Message'}
+                </Typography>
                 <IconButton onClick={handleCloseMessage} size="small">
                   <CloseIcon />
                 </IconButton>
@@ -387,32 +452,41 @@ const Communications: React.FC = () => {
             </DialogTitle>
             <DialogContent>
               <Box sx={{ mb: 2 }}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid sx={{ display: 'flex' }}>
-                    {getIconByType(selectedMessage.type)}
-                  </Grid>
-                  <Grid sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      {selectedMessage.client}
-                    </Typography>
-                  </Grid>
-                  <Grid>
-                    <Chip 
-                      size="small" 
-                      label={selectedMessage.status}
-                      color={getStatusColor(selectedMessage.status) as any}
-                    />
-                  </Grid>
-                  <Grid>
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedMessage.date} {selectedMessage.time}
-                    </Typography>
-                  </Grid>
-                </Grid>
+                {'client' in selectedMessage && selectedMessage.client && typeof selectedMessage.client === 'object' ? (
+                  <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
+                    Client : {selectedMessage.client.name} — {selectedMessage.client.email}
+                  </Typography>
+                ) : (
+                  <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
+                    {`Client : ${selectedMessage.client ?? 'inconnu'}`}
+                  </Typography>
+                )}
+                {'model_response' in selectedMessage ? (
+                  <Chip
+                    size="small"
+                    label={selectedMessage.model_response?.send_status === 'email_sent' ? 'Email envoyé' : 'SMS envoyé'}
+                    color="success"
+                    sx={{ mr: 1 }}
+                  />
+                ) : (
+                  <Chip
+                    size="small"
+                    label={selectedMessage.status === 'sent' ? 'Email envoyé' : selectedMessage.status}
+                    color="success"
+                    sx={{ mr: 1 }}
+                  />
+                )}
+                <Typography variant="body2" color="text.secondary" sx={{ display: 'inline' }}>
+                  {'timestamp' in selectedMessage
+                    ? new Date(selectedMessage.timestamp).toLocaleString()
+                    : `${selectedMessage.date} ${selectedMessage.time}`}
+                </Typography>
               </Box>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="body1">
-                {selectedMessage.content}
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+                {'message' in selectedMessage
+                  ? selectedMessage.message
+                  : selectedMessage.content}
               </Typography>
             </DialogContent>
             <DialogActions>
@@ -421,7 +495,6 @@ const Communications: React.FC = () => {
           </>
         )}
       </Dialog>
-
       {/* Dialog pour créer une nouvelle communication */}
       <Dialog
         open={openNewComm}

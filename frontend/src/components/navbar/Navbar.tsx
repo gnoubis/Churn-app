@@ -67,7 +67,7 @@ const Navbar: React.FC<NavbarProps> = ({ open, toggleDrawer }) => {
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          App Churn
+          ChurnSyst
         </Typography>
         <Box>
           <IconButton

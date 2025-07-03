@@ -489,9 +489,6 @@ const ClientPredictions: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Prédictions de Churn</h1>
         
         <Box sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom sx={{ mb: 4 }}>
-            Prédictions de Churn
-          </Typography>
 
           {showImportForm ? (
             <Card sx={{ mb: 3, maxWidth: 800, mx: 'auto' }}>

@@ -33,10 +33,10 @@ const menuItems = [
   { text: 'Tableau de bord', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Clients', icon: <PeopleIcon />, path: '/clients' },
   { text: 'Prédictions', icon: <AssessmentIcon />, path: '/predictions' },
-  { text: 'Sentiments', icon: <SentimentIcon />, path: '/sentiments' },
-  { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
+  // { text: 'Sentiments', icon: <SentimentIcon />, path: '/sentiments' },
+  // { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
   { text: 'Communications', icon: <MessageIcon />, path: '/communications' },
-  { text: 'Import de données', icon: <ImportExportIcon />, path: '/data-import' },
+  // { text: 'Import de données', icon: <ImportExportIcon />, path: '/data-import' },
   { text: 'Recommandations', icon: <LightbulbIcon />, path: '/recommendations' },
 ];
 

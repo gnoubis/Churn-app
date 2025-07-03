@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -126,6 +126,44 @@ const Dashboard: React.FC = () => {
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['churnRate']);
 
+  const [dashboardStats, setDashboardStats] = useState<null | {
+    active_clients: number;
+    new_clients: number;
+    current_churn_rate: number;
+    churn_evolution: { date: string; churn_rate: number }[];
+    total_clients: number;
+  }>(null);
+
+   const churnData = dashboardStats
+    ? dashboardStats.churn_evolution.map(item => ({
+        month: new Date(item.date).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
+        churnRate: item.churn_rate,
+      }))
+    : [];
+// Calcul des métriques de comparaison
+  const currentRate = churnData[churnData.length - 1].churnRate;
+  const lastMonthRate = churnData[churnData.length - 2].churnRate;
+  const sixMonthsAgoRate = churnData[churnData.length - 7].churnRate;
+  const yearAgoRate = churnData[0].churnRate;
+
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const res = await fetch('http://localhost:8000/api/dashboard/stats/', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Erreur API');
+        const data = await res.json();
+        setDashboardStats(data);
+      } catch (e) {
+        // Optionnel: gestion d'erreur
+      }
+    };
+    fetchStats();
+  }, []);
+
   // Handlers pour les actions principales
   const handleRefresh = useCallback(() => {
     // Simuler un rafraîchissement des données
@@ -184,11 +222,7 @@ const Dashboard: React.FC = () => {
     console.log('Navigation vers la liste complète des clients...');
   }, []);
 
-  // Calcul des métriques de comparaison
-  const currentRate = churnData[churnData.length - 1].churnRate;
-  const lastMonthRate = churnData[churnData.length - 2].churnRate;
-  const sixMonthsAgoRate = churnData[churnData.length - 7].churnRate;
-  const yearAgoRate = churnData[0].churnRate;
+  
 
   const getPercentageChange = (current: number, previous: number) => {
     const change = ((current - previous) / previous) * 100;
@@ -202,6 +236,8 @@ const Dashboard: React.FC = () => {
     { label: '12 mois (Jul)', value: yearAgoRate, change: getPercentageChange(currentRate, yearAgoRate) }
   ];
 
+  
+    
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       {/* Statistiques générales */}

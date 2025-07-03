@@ -256,7 +256,7 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -264,41 +264,26 @@ const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          {error}
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2">
-              Vérifiez que :
-            </Typography>
-            <ul>
-              <li>Vous êtes bien connecté</li>
-              <li>Le serveur backend est en cours d&apos;exécution</li>
-              <li>L&apos;URL de l&apos;API est correcte</li>
-            </ul>
-          </Box>
-        </Alert>
-      </Box>
+      <Alert severity="error" sx={{ m: 2 }}>
+        Erreur lors du chargement des données : {error}
+      </Alert>
     );
   }
 
   if (!stats) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="warning">
-          Aucune donnée disponible
-        </Alert>
-      </Box>
+      <Alert severity="warning" sx={{ m: 2 }}>
+        Aucune donnée disponible
+      </Alert>
     );
   }
 
-  // Préparation des données pour le graphique
-  const chartData = stats.churn_evolution.map(item => ({
-    month: new Date(item.date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
-    churnRate: item.churn_rate * 100,
-    trend: item.churn_rate * 100
-  }));
-
+  // Préparation des données pour le graphique avec des valeurs par défaut
+  const chartData = (stats.churn_evolution || []).map(item => ({
+    month: item?.date ? new Date(item.date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : '',
+    churnRate: item?.churn_rate ? item.churn_rate * 100 : 0,
+    trend: item?.churn_rate ? item.churn_rate * 100 : 0
+  }))
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       {/* Barre d'outils */}
@@ -364,7 +349,7 @@ const Dashboard: React.FC = () => {
               <Typography variant="h6">Taux de Churn</Typography>
             </Box>
             <Typography variant="h4" sx={{ mb: 1 }}>
-              {(stats.current_churn_rate * 100).toFixed(1)}%
+              {stats.current_churn_rate ? (stats.current_churn_rate * 100).toFixed(1) : '0.0'}%
             </Typography>
             <Typography variant="body2" color="text.secondary">
               <TrendingDown sx={{ color: 'error.main', fontSize: 16, verticalAlign: 'sub' }} />
@@ -388,10 +373,10 @@ const Dashboard: React.FC = () => {
               </Box>
               <Typography variant="h6">Clients Actifs</Typography>
             </Box>
-            <Typography variant="h4" sx={{ mb: 1 }}>{stats.active_clients}</Typography>
+            <Typography variant="h4" sx={{ mb: 1 }}>{stats.active_clients || 0}</Typography>
             <Typography variant="body2" color="text.secondary">
               <TrendingUp sx={{ color: 'success.main', fontSize: 16, verticalAlign: 'sub' }} />
-              sur {stats.total_clients} clients au total
+              sur {stats.total_clients || 0} clients au total
             </Typography>
           </CardContent>
         </Card>
@@ -411,7 +396,7 @@ const Dashboard: React.FC = () => {
               </Box>
               <Typography variant="h6">Nouveaux Clients</Typography>
             </Box>
-            <Typography variant="h4" sx={{ mb: 1 }}>{stats.new_clients}</Typography>
+            <Typography variant="h4" sx={{ mb: 1 }}>{stats.new_clients || 0}</Typography>
             <Typography variant="body2" color="text.secondary">
               <TrendingUp sx={{ color: 'info.main', fontSize: 16, verticalAlign: 'sub' }} />
               ce mois-ci

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Navigate, useRoutes } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './components/dashboard/Dashboard';
 import ChurnDetails from './components/analytics/ChurnDetails';
-import Login from './pages/Login';
+import Login from './components/auth/Login';
 import NotFound from './pages/NotFound';
 
 export default function Router() {

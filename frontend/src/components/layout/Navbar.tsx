@@ -138,7 +138,7 @@ const Navbar = () => {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Système de Gestion du Churn
+            ChurnSyst
           </Typography>
         </Box>
 

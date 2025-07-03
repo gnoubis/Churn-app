@@ -2,6 +2,20 @@ from rest_framework import serializers
 from .models import Client, ChurnPrediction, Recommendation, SentimentAnalysis, GeneratedMessage
 
 
+
+class ClientSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Client
+        fields = ['id', 'name', 'email', 'phone']
+
+class GeneratedMessageSerializer(serializers.ModelSerializer):
+    client = ClientSimpleSerializer(read_only=True)  # Ajout du client associé
+
+    class Meta:
+        model = GeneratedMessage
+        fields = '__all__'
+
+
 class ChurnPredictionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChurnPrediction
@@ -17,12 +31,6 @@ class RecommendationSerializer(serializers.ModelSerializer):
 class SentimentAnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = SentimentAnalysis
-        fields = '__all__'
-
-
-class GeneratedMessageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GeneratedMessage
         fields = '__all__'
 
 
