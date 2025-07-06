@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentiment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sentiment-service
+  template:
+    metadata:
+      labels:
+        app: sentiment-service
+    spec:
+      containers:
+      - name: sentiment-service
+        image: churncontenair.azurecr.io/sentiment-service:latest
+        ports:
+        - containerPort: 5002
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+      imagePullSecrets:
+      - name: acr-secret

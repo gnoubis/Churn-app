@@ -202,6 +202,8 @@ const PreviewSection: React.FC<{ data: PreviewData }> = ({ data }) => {
   );
 };
 
+import Pagination from '@mui/material/Pagination';
+
 const ClientPredictions: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
@@ -211,6 +213,8 @@ const ClientPredictions: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showImportForm, setShowImportForm] = useState(true);
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
   const navigate = useNavigate();
 
   const checkAuth = () => {
@@ -678,14 +682,14 @@ const ClientPredictions: React.FC = () => {
                     </CardContent>
                   </Card>
 
-                  {predictions.results.map((client, index) => {
+                  {predictions.results.slice((page-1)*pageSize, page*pageSize).map((client, idx) => {
                     // Vérifier si ce client a une erreur
                     const hasError = predictions.error_details?.some(
                       (error) => typeof error === 'object' && (error as ErrorDetail).client_name === client.client_name
                     );
 
                     return (
-                      <Box key={index} sx={{ mt: 4 }}>
+                      <Box key={idx} sx={{ mt: 4 }}>
                         <Card sx={{ mb: 3 }}>
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
@@ -799,6 +803,17 @@ const ClientPredictions: React.FC = () => {
                       </Box>
                     );
                   })}
+                </Box>
+              )}
+              {/* Pagination pour les résultats */}
+              {predictions && predictions.results.length > pageSize && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination
+                    count={Math.ceil(predictions.results.length / pageSize)}
+                    page={page}
+                    onChange={(e, value) => setPage(value)}
+                    color="primary"
+                  />
                 </Box>
               )}
             </Box>

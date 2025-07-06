@@ -98,6 +98,9 @@ DATABASES = {
         'PASSWORD': config("DB_PASSWORD"),
         'HOST': config("DB_HOST"),
         'PORT': config("DB_PORT"),
+        'OPTIONS': {
+            'sslmode': 'require',  # pour Azure Flexible Server avec SSL obligatoire
+        },
     }
 }
 
@@ -173,8 +176,12 @@ load_dotenv()
 CHURN_URL = 'http://localhost:8001/predict/'
 RECOMMENDER_URL = 'http://localhost:8002/recommend/'
 SENTIMENT_URL = 'http://localhost:8003/analyze/'
-MESSAGE_URL = 'http://127.0.0.1:8004/generate-message/'
-CUSTOM_MESSAGE_URL = 'http://localhost:8004/generate-custom-text/'
+
+MESSAGE_URL = os.environ.get('MESSAGE_URL', 'http://127.0.0.1:8004/generate-message/')
+CUSTOM_MESSAGE_URL = os.environ.get('CUSTOM_MESSAGE_URL', 'http://localhost:8004/generate-custom-text/')
+CHURN_URL = os.environ.get('CHURN_URL', 'http://localhost:5000/predict/')
+RECOMMENDER_URL = os.environ.get('RECOMMENDER_URL', 'http://localhost:5001/recommend/')
+SENTIMENT_URL = os.environ.get('SENTIMENT_URL', 'http://localhost:5002/sentiment/')
 
 
 CSRF_TRUSTED_ORIGINS = [

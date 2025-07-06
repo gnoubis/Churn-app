@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: churncontenair.azurecr.io/backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+          - name: MESSAGE_URL
+            value: "http://ai-generator:8004/generate-message/"
+          - name: CUSTOM_MESSAGE_URL
+            value: "http://ai-generator:8004/generate-custom-text/"
+          - name: CHURN_URL
+            value: "http://churn-model-service:5000/predict/"
+          - name: RECOMMENDER_URL
+            value: "http://recommendation-service:5001/recommend/"
+          - name: SENTIMENT_URL
+            value: "http://sentiment-service:5002/sentiment/"
+        envFrom:
+        - secretRef:
+            name: backend-secret
+        - configMapRef:
+            name: backend-config
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      imagePullSecrets:
+      - name: acr-secret

@@ -1,0 +1,71 @@
+name: Deploy to Azure AKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ${{ secrets.REGISTRY_NAME }}.azurecr.io
+      AKS_CLUSTER: ${{ secrets.AKS_CLUSTER_NAME }}
+      AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_NAME }}
+          password: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Build and push each image
+      - name: Build and push backend
+        run: |
+          docker build -t $REGISTRY/backend:latest ./backend
+          docker push $REGISTRY/backend:latest
+
+      - name: Build and push churn-model-service
+        run: |
+          docker build -t $REGISTRY/churn-model-service:latest ./churn_model_service
+          docker push $REGISTRY/churn-model-service:latest
+
+      - name: Build and push recommendation-service
+        run: |
+          docker build -t $REGISTRY/recommendation-service:latest ./recommendation_service
+          docker push $REGISTRY/recommendation-service:latest
+
+      - name: Build and push sentiment-service
+        run: |
+          docker build -t $REGISTRY/sentiment-service:latest ./sentiment_service
+          docker push $REGISTRY/sentiment-service:latest
+
+      - name: Build and push frontend
+        run: |
+          docker build -t $REGISTRY/frontend:latest ./frontend
+          docker push $REGISTRY/frontend:latest
+
+      # Get AKS credentials
+      - name: Get AKS credentials
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER }}
+
+      # Deploy to AKS
+      - name: Deploy manifests to AKS
+        run: |
+          kubectl apply -f k8s/
+
+      - name: Show all pods
+        run: |
+          kubectl get pods -A
