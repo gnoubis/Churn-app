@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ai_generator-service
+  name: ai-generator-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ai_generator-service
+      app: ai-generator-service
   template:
     metadata:
       labels:
-        app: ai_generator-service
+        app: ai-generator-service
     spec:
       containers:
-      - name: ai_generator-service
-        image: churncontenair.azurecr.io/ai_generator-service:latest
+      - name: ai-generator-service
+        image: churncontenair.azurecr.io/ai-generator-service:latest
         ports:
         - containerPort: 5003
         resources:

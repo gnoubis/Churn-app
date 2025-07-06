@@ -53,8 +53,8 @@ jobs:
       # Build and push ai_generator-service
       - name: Build and push ai_generator-service image
         run: |
-          docker build -t $REGISTRY/ai_generator-service:latest ./ai_generator
-          docker push $REGISTRY/ai_generator-service:latest
+          docker build -t $REGISTRY/ai-generator-service:latest ./ai-generator
+          docker push $REGISTRY/ai-generator-service:latest
 
       # Build and push frontend
       - name: Build and push frontend image
