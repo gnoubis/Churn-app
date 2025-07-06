@@ -1,12 +1,22 @@
-FROM node:14
+# Étape 1 : Build de l'application React
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
-COPY package.json ./
-COPY package-lock.json ./
-
+COPY package.json package-lock.json ./
 RUN npm install
 
-COPY . .
+COPY . . 
+RUN npm run build
 
-CMD ["npm", "start"]
+# Étape 2 : Serveur NGINX pour la production
+FROM nginx:alpine
+
+# Copie la configuration personnalisée de Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copie les fichiers React buildés
+COPY --from=build /app/build /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
