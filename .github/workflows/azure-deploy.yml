@@ -49,6 +49,12 @@ jobs:
         run: |
           docker build -t $REGISTRY/sentiment-service:latest ./sentiment_service
           docker push $REGISTRY/sentiment-service:latest
+      
+      # Build and push ai_generator-service
+      - name: Build and push ai_generator-service image
+        run: |
+          docker build -t $REGISTRY/ai_generator-service:latest ./ai_generator_service
+          docker push $REGISTRY/ai_generator-service:latest
 
       # Build and push frontend
       - name: Build and push frontend image

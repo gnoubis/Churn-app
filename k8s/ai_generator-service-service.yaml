@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai_generator-service
+spec:
+  type: ClusterIP
+  selector:
+    app: ai_generator-service
+  ports:
+    - protocol: TCP
+      port: 5003
+      targetPort: 5003
