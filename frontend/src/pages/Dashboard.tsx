@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../api/api';
 import {
   Box,
   Paper,
@@ -65,6 +66,7 @@ import {
   Bar,
 } from 'recharts';
 import { TooltipProps } from 'recharts';
+
 
 interface Client {
   id: number;
@@ -139,7 +141,8 @@ const Dashboard: React.FC = () => {
         throw new Error('Non authentifié');
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/clients/all/', {
+      
+const response = await fetch(`${API_URL}/api/clients/all/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

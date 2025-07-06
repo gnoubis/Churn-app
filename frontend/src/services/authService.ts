@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { JWTResponse, LoginCredentials, User } from '../types/user';
 
-const API_URL = 'http://localhost:8000';
+import { API_URL } from '../api/api';
 
 class AuthService {
   private static instance: AuthService;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_URLS } from '../api/api';
+import { API_URL } from '../api/api';
 
 export interface ChartSettings {
   timeframe: 'week' | 'month' | 'quarter' | 'year';
@@ -16,11 +16,11 @@ export interface ChurnData {
 }
 
 class ChartService {
-  private readonly baseURL = API_URLS.churn;
+  private readonly baseURL = `${API_URL}/churn`;
 
   async getChurnData(settings: ChartSettings): Promise<ChurnData[]> {
     try {
-      const response = await axios.get(`${this.baseURL}/churn/history`, {
+      const response = await axios.get(`${this.baseURL}/history`, {
         params: {
           timeframe: settings.timeframe,
           startDate: settings.startDate,

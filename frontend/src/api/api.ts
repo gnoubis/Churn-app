@@ -1,17 +1,7 @@
 import axios from 'axios';
 
 // Configuration des URLs des microservices
-export const API_URLS = {
-  base: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  auth: '/auth',
-  users: '/users',
-  clients: '/clients',
-  churn: '/churn',
-  analytics: '/analytics',
-  sentiment: '/sentiment',
-  communications: '/communications',
-  recommendations: '/recommendations'
-} as const;
+export const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 // Configuration d'Axios
 const createAxiosInstance = (baseURL: string) => {
@@ -24,9 +14,9 @@ const createAxiosInstance = (baseURL: string) => {
 };
 
 // Instances Axios pour chaque microservice
-const churnAPI = createAxiosInstance(API_URLS.base);
-const sentimentAPI = createAxiosInstance(API_URLS.base);
-const communicationAPI = createAxiosInstance(API_URLS.base);
+const churnAPI = createAxiosInstance(API_URL);
+const sentimentAPI = createAxiosInstance(API_URL);
+const communicationAPI = createAxiosInstance(API_URL);
 
 // Types
 export interface Client {
