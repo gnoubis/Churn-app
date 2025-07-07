@@ -6,7 +6,11 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 
-COPY . . 
+COPY . .
+
+# ✅ Ajoute ceci pour utiliser la bonne URL API pendant le build
+COPY .env.production .env
+
 RUN npm run build
 
 # Étape 2 : Serveur NGINX pour la production
