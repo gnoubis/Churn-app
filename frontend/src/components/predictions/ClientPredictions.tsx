@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 import {
   Box,
   Grid,
@@ -343,7 +345,7 @@ const ClientPredictions: React.FC = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await axios.post('http://localhost:8000/api/clients/process/', formData, {
+      const response = await axios.post(`${API_URL}/api/clients/process/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

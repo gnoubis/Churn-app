@@ -37,6 +37,8 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
 // Données simulées pour les communications
 const communicationsData = [
   {
@@ -146,7 +148,7 @@ const Communications: React.FC = () => {
       setLoadingMessages(true);
       try {
         const token = localStorage.getItem('accessToken');
-        const response = await fetch('http://localhost:8000/api/messages/', {
+        const response = await fetch(`${API_URL}/api/messages/`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

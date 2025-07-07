@@ -55,6 +55,8 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import GridItem from '../common/GridItem';
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
 interface Client {
   id: string;
   name: string;
@@ -403,7 +405,7 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
                     setLoading(true);
                     const token = localStorage.getItem('accessToken');
                     if (!token) throw new Error('Token manquant, veuillez vous reconnecter.');
-                    const response = await fetch('http://localhost:8000/api/send-email/', {
+                    const response = await fetch(`${API_URL}/api/send-email/`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',

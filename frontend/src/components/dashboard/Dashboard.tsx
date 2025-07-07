@@ -63,6 +63,8 @@ import {
   Bar,
 } from 'recharts';
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
 // Données simulées du taux de churn avec ligne de tendance
 const churnData = [
   { month: 'Jul 2021', churnRate: 2.1, trend: 2.3 },
@@ -151,7 +153,7 @@ const Dashboard: React.FC = () => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('accessToken');
-        const res = await fetch('http://localhost:8000/api/dashboard/stats/', {
+        const res = await fetch(`${API_URL}/api/dashboard/stats/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Erreur API');
