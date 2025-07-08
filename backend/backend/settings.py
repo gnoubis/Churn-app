@@ -172,16 +172,14 @@ DJOSER = {
 
 load_dotenv()
 
-# URLs des services
-CHURN_URL = 'http://localhost:8001/predict/'
-RECOMMENDER_URL = 'http://localhost:8002/recommend/'
-SENTIMENT_URL = 'http://localhost:8003/analyze/'
+# Microservices IA (via services Kubernetes)
+CHURN_URL = os.environ.get('CHURN_URL', 'http://churn-model-service:5000/predict/')
+RECOMMENDER_URL = os.environ.get('RECOMMENDER_URL', 'http://recommendation-service:5001/recommend/')
+SENTIMENT_URL = os.environ.get('SENTIMENT_URL', 'http://sentiment-service:5002/sentiment/')
 
-MESSAGE_URL = os.environ.get('MESSAGE_URL', 'http://127.0.0.1:8004/generate-message/')
-CUSTOM_MESSAGE_URL = os.environ.get('CUSTOM_MESSAGE_URL', 'http://localhost:8004/generate-custom-text/')
-CHURN_URL = os.environ.get('CHURN_URL', 'http://localhost:5000/predict/')
-RECOMMENDER_URL = os.environ.get('RECOMMENDER_URL', 'http://localhost:5001/recommend/')
-SENTIMENT_URL = os.environ.get('SENTIMENT_URL', 'http://localhost:5002/sentiment/')
+# AI Generator messages
+MESSAGE_URL = os.environ.get('MESSAGE_URL', 'http://ai-generator-service:5003/generate-message/')
+CUSTOM_MESSAGE_URL = os.environ.get('CUSTOM_MESSAGE_URL', 'http://ai-generator-service:5003/generate-custom-text/')
 
 
 CSRF_TRUSTED_ORIGINS = [

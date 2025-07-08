@@ -55,7 +55,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import GridItem from '../common/GridItem';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = process.env.REACT_APP_API_URL ;
 
 interface Client {
   id: string;

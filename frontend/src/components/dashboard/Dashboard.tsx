@@ -63,7 +63,7 @@ import {
   Bar,
 } from 'recharts';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Données simulées du taux de churn avec ligne de tendance
 const churnData = [

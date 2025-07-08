@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+
+if (!process.env.REACT_APP_API_URL) {
+  throw new Error("REACT_APP_API_URL n'est pas définie dans l'environnement !");
+}
+
 // Configuration des URLs des microservices
-export const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+export const API_URL = process.env.REACT_APP_API_URL;
 
 // Configuration d'Axios
 const createAxiosInstance = (baseURL: string) => {

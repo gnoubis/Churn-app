@@ -33,7 +33,7 @@ import { User, UserRole } from '../../types/user';
 import axios from 'axios';
 import { ElementType } from 'react';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const GridItem = (props: { component?: ElementType; children: React.ReactNode } & any) => (
   <Grid component={props.component || 'div'} item {...props}>
