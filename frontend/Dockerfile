@@ -9,7 +9,7 @@ RUN npm install
 COPY . .
 
 # ✅ Ajoute ceci pour utiliser la bonne URL API pendant le build
-COPY .env.production .env
+COPY .env .env
 
 RUN npm run build
 
