@@ -18,6 +18,8 @@ from .serializers import (
     GeneratedMessageSerializer
 )
 from django.core.mail import send_mail
+import logging
+import os
 
 
 class GeneratedMessageListView(ListAPIView):
@@ -253,6 +255,27 @@ class SentimentAnalysisView(APIView):
             serializer = SentimentAnalysisSerializer(sentiment)
             return Response(serializer.data)
         except requests.exceptions.RequestException as e:
+            # Logging
+            logger = logging.getLogger("sentiment_service")
+            log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+            os.makedirs(log_dir, exist_ok=True)
+            log_path = os.path.join(log_dir, 'sentiment_service.log')
+            file_handler = logging.FileHandler(log_path)
+            formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+            file_handler.setFormatter(formatter)
+            if not logger.hasHandlers():
+                logger.addHandler(file_handler)
+            logger.setLevel(logging.ERROR)
+            logger.error(f"Erreur lors de l'appel au service de sentiment: {str(e)}", exc_info=True)
+
+            # Envoyer un mail d'alerte à l'admin
+            send_mail(
+                subject="[ALERTE] Erreur service SentimentAnalysis",
+                message=f"Erreur lors de l'appel au service Sentiment: {str(e)}\nPayload: {payload}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[admin[1] for admin in settings.ADMINS],
+                fail_silently=True
+            )
             return Response({"error": str(e)}, status=500)
 
 
