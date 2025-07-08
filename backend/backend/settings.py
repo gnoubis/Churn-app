@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -60,7 +61,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     
 ]
 
@@ -189,6 +189,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:3001',
     'https://chronexapp-378ebf6db785.herokuapp.com',
+    "http://4.255.51.236",
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -198,6 +199,7 @@ CORS_ALLOWED_ORIGINS = [
     'https://api.chronex-app.com',
     'https://app.chronex-app.com',
     'https://chronexapp-378ebf6db785.herokuapp.com',
+    "http://4.255.51.236",
 ]
 
 CORS_ALLOW_HEADERS = [
