@@ -177,7 +177,7 @@ const response = await fetch(`${API_URL}/api/clients/all/`, {
         throw new Error('Non authentifié');
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/dashboard/stats/', {
+      const response = await fetch(`${API_URL}/api/dashboard/stats/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

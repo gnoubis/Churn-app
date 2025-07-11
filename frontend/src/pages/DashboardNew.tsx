@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+const API_URL = process.env.REACT_APP_API_URL;
 import {
   Box,
   Paper,
@@ -162,7 +163,7 @@ const DashboardNew: React.FC = () => {
         throw new Error('Non authentifié');
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/dashboard/stats/', {
+      const response = await fetch(`${API_URL}/api/dashboard/stats/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

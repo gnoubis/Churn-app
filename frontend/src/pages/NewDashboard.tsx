@@ -39,6 +39,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { API_URL } from 'api/api';
 
 // Interfaces pour typer nos données
 interface DashboardData {
@@ -91,7 +92,7 @@ const NewDashboard: React.FC = () => {
         throw new Error('Non authentifié');
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/dashboard/stats/', {
+      const response = await fetch(`${API_URL}/api/dashboard/stats/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -128,7 +129,7 @@ const NewDashboard: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch('http://127.0.0.1:8000/api/clients/all/', {
+      const response = await fetch(`${API_URL}/api/clients/all/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

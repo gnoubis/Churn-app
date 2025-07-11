@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+const API_URL = process.env.REACT_APP_API_URL;
 import {
   Box,
   Paper,
@@ -55,7 +56,6 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import GridItem from '../common/GridItem';
 
-const API_URL = process.env.REACT_APP_API_URL ;
 
 interface Client {
   id: string;
@@ -206,7 +206,7 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
 
       console.log('Données envoyées à l\'API:', requestBody); // Pour le débogage
 
-      const response = await fetch('http://127.0.0.1:8000/api/message-generation/', {
+      const response = await fetch(`${API_URL}/api/message-generation/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +254,7 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
 
       console.log('Données envoyées à l\'API:', requestBody); // Pour le débogage
 
-      const response = await fetch('http://127.0.0.1:8000/api/generate-custom-text/', {
+      const response = await fetch(`${API_URL}/api/generate-custom-text/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -525,7 +525,7 @@ const ClientList: React.FC = () => {
       const tone = 'formel'; // ou propose un choix à l'utilisateur
       const client_email = selectedClient.email || '';
   
-      const response = await fetch('http://127.0.0.1:8000/api/message-generation/', {
+      const response = await fetch(`${API_URL}/api/message-generation/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
