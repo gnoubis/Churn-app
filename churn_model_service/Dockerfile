@@ -13,8 +13,8 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 # Copie tout le code de l'application dans le conteneur
 COPY . .
 
-# Expose le port utilisé par le service (8003)
-EXPOSE 8001
+# Expose le port utilisé par le service (5000)
+EXPOSE 5000
 
 # Commande pour démarrer le service avec Uvicorn
-CMD ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "5000"]
