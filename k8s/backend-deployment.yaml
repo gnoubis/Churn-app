@@ -16,12 +16,12 @@ spec:
       - name: backend
         image: churncontenair.azurecr.io/backend:latest
         ports:
-        - containerPort: 8000
+        - containerPort: 5000
         env:
           - name: MESSAGE_URL
-            value: "http://ai-generator:8004/generate-message/"
+            value: "http://ai-generator-service:5003/generate-message/"
           - name: CUSTOM_MESSAGE_URL
-            value: "http://ai-generator:8004/generate-custom-text/"
+            value: "http://ai-generator-service:5003/generate-custom-text/"
           - name: CHURN_URL
             value: "http://churn-model-service:5000/predict/"
           - name: RECOMMENDER_URL
