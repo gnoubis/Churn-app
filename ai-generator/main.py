@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 
 class MessageRequest(BaseModel):
@@ -37,7 +37,7 @@ async def generate_message(data: MessageRequest):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:8000",
+        "HTTP-Referer": "http://57.152.93.83:8000",
         "X-Title": "Message Generator"
     }
 
@@ -95,7 +95,7 @@ async def generate_custom_text(data: CustomPromptRequest):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:8000",
+        "HTTP-Referer": "http://57.152.93.83:8000",
         "X-Title": "Message Generator"
     }
 
