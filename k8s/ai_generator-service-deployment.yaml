@@ -6,14 +6,6 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ai-generator-serviceapiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ai-generator-service
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
       app: ai-generator-service
   template:
     metadata:
@@ -40,23 +32,15 @@ spec:
             memory: 256Mi
       imagePullSecrets:
       - name: acr-secret
-
-  template:
-    metadata:
-      labels:
-        app: ai-generator-service
-    spec:
-      containers:
-      - name: ai-generator-service
-        image: churncontenair.azurecr.io/ai-generator-service:latest
-        ports:
-        - containerPort: 5003
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 250m
-            memory: 256Mi
-      imagePullSecrets:
-      - name: acr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-generator-service
+spec:
+  selector:
+    app: ai-generator-service
+  ports:
+  - port: 5003
+    targetPort: 5003
+  type: ClusterIP
