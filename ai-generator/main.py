@@ -12,14 +12,16 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 
 class MessageRequest(BaseModel):
     client_name: str = Field(..., min_length=2, max_length=100)
+    client_email: str = Field(..., min_length=5, max_length=100)
     recommended_offer: str = Field(..., min_length=10, max_length=500)
     channel: Literal["email", "sms"] = Field(...)
     tone: Literal["formel", "informel", "amical"] = Field(...)
+    max_tokens: int = Field(500, ge=50, le=2000)  # Nouveau paramètre configurable
 
 class CustomPromptRequest(BaseModel):
     prompt: str = Field(..., min_length=10, max_length=1000)
@@ -28,50 +30,75 @@ class CustomPromptRequest(BaseModel):
 
 @app.post("/generate-message/")
 async def generate_message(data: MessageRequest):
-    prompt = (
-        f"Rédige un message {data.channel} au ton {data.tone} pour un client nommé "
-        f"{data.client_name}, lui proposant cette offre : {data.recommended_offer}. "
-        "Le message doit être clair, engageant et personnalisé."
-    )
+    logger.info(f"Reçu une requête pour {data.client_name} ({data.channel})")
+    
+    # Construire le prompt en incluant l'email si c'est pour un email
+    if data.channel == "email":
+        prompt = (
+            f"Rédige un message {data.channel} au ton {data.tone} pour un client nommé "
+            f"{data.client_name} (email: {data.client_email}), lui proposant cette offre : {data.recommended_offer}. "
+            "Le message doit être clair, engageant et personnalisé. Inclus un objet d'email approprié. "
+            "IMPORTANT : Réponds UNIQUEMENT en français."
+        )
+    else:
+        prompt = (
+            f"Rédige un message {data.channel} au ton {data.tone} pour un client nommé "
+            f"{data.client_name}, lui proposant cette offre : {data.recommended_offer}. "
+            "Le message doit être clair, engageant et personnalisé. "
+            "IMPORTANT : Réponds UNIQUEMENT en français."
+        )
+    
+    logger.info(f"Prompt généré: {prompt[:100]}...")
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://57.152.93.83:8000",
+        "HTTP-Referer": "http://ai-generator-service:5003",
         "X-Title": "Message Generator"
     }
 
     payload = {
         "model": "mistralai/mistral-7b-instruct",
         "messages": [
+            {"role": "system", "content": "Tu es un assistant qui répond toujours en français. Tes réponses doivent être claires, professionnelles et parfaitement rédigées en français."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 200
+        "max_tokens": data.max_tokens  # Utilise la valeur configurée par l'utilisateur
     }
 
     try:
+        logger.info("Envoi de la requête à OpenRouter...")
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
                 json=payload
             )
+            logger.info(f"Réponse reçue: {response.status_code}")
             response.raise_for_status()
             result = response.json()
             message = result["choices"][0]["message"]["content"]
             
             # Validation de la longueur pour les SMS
             if data.channel == "sms" and len(message) > 160:
+                # Option 1: Tronquer avec avertissement
+                logger.warning(f"Message SMS tronqué de {len(message)} à 160 caractères")
                 message = message[:157] + "..."
+                # Option 2: Ou laisser le message complet (décommentez la ligne suivante)
+                # logger.info(f"Message SMS de {len(message)} caractères généré (dépasse 160)")
 
+            logger.info("Message généré avec succès")
             return {"message": message}
 
     except ReadTimeout:
+        logger.error("Timeout lors de l'appel à OpenRouter")
         raise HTTPException(status_code=504, detail="L'API OpenRouter a mis trop de temps à répondre (timeout).")
     except HTTPError as http_err:
+        logger.error(f"Erreur HTTP: {http_err}")
         raise HTTPException(status_code=500, detail=f"Erreur HTTP: {http_err}")
     except Exception as err:
+        logger.error(f"Une erreur inattendue s'est produite: {err}")
         raise HTTPException(status_code=500, detail=f"Une erreur inattendue s'est produite: {err}")
 
 @app.post("/generate-custom-text/")
@@ -95,13 +122,14 @@ async def generate_custom_text(data: CustomPromptRequest):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://57.152.93.83:8000",
+        "HTTP-Referer": "http://ai-generator-service:5003",
         "X-Title": "Message Generator"
     }
 
     payload = {
         "model": "mistralai/mistral-7b-instruct",
         "messages": [
+            {"role": "system", "content": "Tu es un assistant qui répond toujours en français. Tes réponses doivent être claires, professionnelles et parfaitement rédigées en français."},
             {"role": "user", "content": data.prompt}
         ],
         "temperature": data.temperature,
@@ -137,3 +165,11 @@ async def generate_custom_text(data: CustomPromptRequest):
     except Exception as err:
         logger.error(f"Erreur inattendue: {str(err)}")
         raise HTTPException(status_code=500, detail=f"Une erreur inattendue s'est produite: {str(err)}")
+
+@app.get("/")
+async def root():
+    return {"message": "AI Message Generator API is running"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": "2025-07-12"}

@@ -57,51 +57,55 @@ import { DatePicker } from '@mui/x-date-pickers';
 import GridItem from '../common/GridItem';
 
 
-interface Client {
-  id: string;
+// Types adaptés à la réponse de l'API
+interface ChurnReason {
+  value: string;
+  impact: string;
+  feature: string;
+  importance: number;
+}
+
+interface ChurnPrediction {
+  id: number;
+  timestamp: string;
+  prediction: {
+    reasons: ChurnReason[];
+    risk_level: string;
+    churn_probability: number;
+  };
+}
+
+interface Recommendation {
+  id: number;
+  timestamp: string;
+  recommended_offer: string;
+  model_response: {
+    details: Record<string, any>;
+    recommendations: string[];
+  };
+}
+
+interface Analyses {
+  churn_predictions: ChurnPrediction[];
+  recommendations: Recommendation[];
+  sentiment_analyses: any[];
+  generated_messages: any[];
+}
+
+export interface Client {
+  id: number;
   name: string;
   email: string;
   phone: string;
-  lastPurchase: string;
-  totalSpent: number;
-  status: 'active' | 'inactive';
-  riskScore: number;
-  recommendations: string[];
+  analyses: Analyses;
 }
 
-// Données simulées
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'Jean Dupont',
-    email: 'jean.dupont@email.com',
-    phone: '+33 6 12 34 56 78',
-    lastPurchase: '2024-03-15',
-    totalSpent: 1500,
-    status: 'active',
-    riskScore: 85,
-    recommendations: [
-      'Proposer une remise de fidélité de 15%',
-      'Planifier un appel de suivi personnalisé',
-      'Envoyer une enquête de satisfaction'
-    ]
-  },
-  {
-    id: '2',
-    name: 'Marie Martin',
-    email: 'marie.martin@email.com',
-    phone: '+33 6 23 45 67 89',
-    lastPurchase: '2024-03-10',
-    totalSpent: 2300,
-    status: 'inactive',
-    riskScore: 65,
-    recommendations: [
-      'Envoyer une newsletter personnalisée',
-      'Offrir un service premium gratuit pendant 1 mois',
-      'Proposer une remise sur le prochain achat'
-    ]
-  },
-];
+interface ClientsApiResponse {
+  total_clients: number;
+  clients: Client[];
+}
+
+// Suppression des données simulées, on utilisera les données de l'API.
 
 interface GenerateMessageResponse {
   content: string;
@@ -138,6 +142,18 @@ const getRiskLevel = (score: number): RiskLevel => {
   if (score >= 50) return { level: 'medium', color: 'warning' };
   return { level: 'low', color: 'success' };
 };
+
+// Utilitaire pour extraire le risque depuis les analyses
+function getClientRisk(client: Client): { risk: number, riskLevel: string } {
+  const lastChurn = client.analyses.churn_predictions[0];
+  if (lastChurn) {
+    return {
+      risk: Math.round(lastChurn.prediction.churn_probability * 100),
+      riskLevel: lastChurn.prediction.risk_level,
+    };
+  }
+  return { risk: 0, riskLevel: 'Inconnu' };
+}
 
 interface Filters {
   search: string;
@@ -201,7 +217,6 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
         recommended_offer: selectedRecommendation,
         channel: channel,
         tone: tone,
-        client_email: client.email || '' // Email optionnel
       };
 
       console.log('Données envoyées à l\'API:', requestBody); // Pour le débogage
@@ -215,12 +230,18 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
         body: JSON.stringify(requestBody),
       });
 
+      const rawText = await response.text();
+      console.log('Réponse brute de l’API:', rawText);
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la génération du message');
+        throw new Error("Erreur lors de la génération du message : " + rawText);
       }
-
-      const data = await response.json();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error('Réponse de l’API non valide (pas du JSON) : ' + rawText);
+      }
+      
       setGeneratedMessage(data.message);
       onMessageGenerated(data.message);
     } catch (err) {
@@ -297,9 +318,9 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
                 onChange={(e) => setSelectedRecommendation(e.target.value)}
                 label="Recommandation"
               >
-                {client?.recommendations.map((rec, index) => (
-                  <MenuItem key={index} value={rec}>
-                    {rec}
+                {client?.analyses.recommendations.map((rec, index) => (
+                  <MenuItem key={index} value={rec.model_response.recommendations.join(' | ')}>
+                    {rec.model_response.recommendations.length > 0 ? rec.model_response.recommendations.join(' | ') : 'Aucune recommandation'}
                   </MenuItem>
                 ))}
               </Select>
@@ -482,7 +503,9 @@ const GenerateMessageDialog: React.FC<GenerateMessageDialogProps> = ({
 const ClientList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+const [totalClients, setTotalClients] = useState(0);
+const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [messageType, setMessageType] = useState<'email' | 'message' | 'details'>('email');
   const [loading, setLoading] = useState(false);
@@ -501,6 +524,30 @@ const ClientList: React.FC = () => {
   const [generateMessageOpen, setGenerateMessageOpen] = useState(false);
   const [selectedClientForMessage, setSelectedClientForMessage] = useState<Client | null>(null);
 
+  // Récupération des clients depuis l'API
+  React.useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('accessToken');
+        const res = await fetch(`${API_URL}/api/clients/all/`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error('Erreur lors du chargement des clients');
+        const data: ClientsApiResponse = await res.json();
+        setClients(data.clients);
+        setTotalClients(data.total_clients);
+      } catch (e: any) {
+        setSnackbarMessage(e.message || 'Erreur inconnue');
+        setSnackbarSeverity('error');
+        setOpenSnackbar(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClients();
+    // eslint-disable-next-line
+  }, []);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -520,7 +567,7 @@ const ClientList: React.FC = () => {
         throw new Error('Vous devez être connecté pour générer un message.');
       }
       // Utilise la première recommandation par défaut, ou laisse vide si aucune
-      const recommended_offer = selectedClient.recommendations[0] || '';
+      const recommended_offer = selectedClient.analyses.recommendations[0]?.model_response.recommendations.join(' | ') || '';
       const channel = messageType === 'email' ? 'email' : 'sms';
       const tone = 'formel'; // ou propose un choix à l'utilisateur
       const client_email = selectedClient.email || '';
@@ -536,7 +583,7 @@ const ClientList: React.FC = () => {
           recommended_offer,
           channel,
           tone,
-          client_email,
+          // client_email,
         }),
       });
   
@@ -630,7 +677,7 @@ const ClientList: React.FC = () => {
 
   // Fonction de filtrage des clients
   const filteredClients = useMemo(() => {
-    return mockClients.filter(client => {
+    return clients.filter((client: Client) => {
       // Filtre de recherche
       const searchMatch = 
         filters.search === '' ||
@@ -638,7 +685,8 @@ const ClientList: React.FC = () => {
         client.email.toLowerCase().includes(filters.search.toLowerCase());
 
       // Filtre de niveau de risque
-      const riskLevel = getRiskLevel(client.riskScore).level;
+      const { risk, riskLevel } = getClientRisk(client);
+      // const riskLevel = getRiskLevel(client.riskScore).level;
       const riskMatch = 
         filters.riskLevel === 'all' ||
         (filters.riskLevel === 'high' && riskLevel === 'high') ||
@@ -647,7 +695,7 @@ const ClientList: React.FC = () => {
 
       return searchMatch && riskMatch;
     });
-  }, [filters, mockClients]);
+  }, [filters, clients]);
 
   const handleFilterChange = (field: keyof Filters, value: any) => {
     setFilters(prev => ({
@@ -681,12 +729,14 @@ const ClientList: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
+        {/* Titre */}
         <GridItem xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h5">Liste des Clients</Typography>
           </Box>
         </GridItem>
-
+  
+        {/* Filtres */}
         <GridItem xs={12}>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Grid container spacing={3} alignItems="center">
@@ -706,6 +756,7 @@ const ClientList: React.FC = () => {
                   placeholder="Rechercher par nom ou email..."
                 />
               </GridItem>
+  
               <GridItem xs={12} md={4}>
                 <FormControl fullWidth>
                   <InputLabel>Niveau de risque</InputLabel>
@@ -721,126 +772,147 @@ const ClientList: React.FC = () => {
                   </Select>
                 </FormControl>
               </GridItem>
+  
               <GridItem xs={12} md={2}>
-                <Button 
-                  onClick={handleResetFilters}
-                  fullWidth
-                  variant="outlined"
-                >
+                <Button fullWidth variant="outlined" onClick={handleResetFilters}>
                   Réinitialiser
                 </Button>
               </GridItem>
             </Grid>
           </Paper>
         </GridItem>
-
+  
+        {/* Tableau Clients */}
         <GridItem xs={12}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Client</TableCell>
-                  <TableCell>Contact</TableCell>
-                  <TableCell>Dernier achat</TableCell>
-                  <TableCell>Total dépensé</TableCell>
-                  <TableCell>Risque de Churn</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredClients
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((client) => (
-                    <React.Fragment key={client.id}>
-                      <TableRow>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {client.name}
-                            <IconButton size="small" onClick={() => toggleRowExpanded(client.id)}>
-                              {expandedRows.has(client.id) ? <ExpandLess /> : <ExpandMore />}
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{client.email}</Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {client.phone}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{new Date(client.lastPurchase).toLocaleDateString()}</TableCell>
-                        <TableCell>{client.totalSpent.toLocaleString()} €</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={`${client.riskScore}%`}
-                            color={getRiskLevel(client.riskScore).color}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title="Voir les recommandations">
-                            <IconButton onClick={() => handleOpenDialog(client, 'details')}>
-                              <RecommendIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Envoyer un email">
-                            <IconButton onClick={() => handleOpenDialog(client, 'email')}>
-                              <EmailIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Envoyer un SMS">
-                            <IconButton onClick={() => handleOpenDialog(client, 'message')}>
-                              <MessageIcon />
-                            </IconButton>
-                          </Tooltip>
-                          {/* <Tooltip title="Générer un message personnalisé">
-                            <IconButton onClick={() => handleOpenGenerateMessage(client)}>
-                              <AutoAwesomeIcon color="secondary" />
-                            </IconButton>
-                          </Tooltip> */}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={6} sx={{ py: 0 }}>
-                          <Collapse in={expandedRows.has(client.id)} timeout="auto" unmountOnExit>
-                            <Box sx={{ py: 2 }}>
-                              <Typography variant="h6" gutterBottom component="div">
-                                Recommandations IA
-                              </Typography>
-                              <Grid container spacing={2}>
-                                {client.recommendations.map((recommendation, index) => (
-                                  <Grid item xs={12} md={4} key={index}>
-                                    <Card variant="outlined">
-                                      <CardContent>
-                                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                                          <AutoAwesomeIcon color="primary" />
-                                          <Typography variant="body2">{recommendation}</Typography>
-                                        </Box>
-                                      </CardContent>
-                                    </Card>
-                                  </Grid>
-                                ))}
-                              </Grid>
+          {loading ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 200,
+                mt: 4,
+              }}
+            >
+              <CircularProgress />
+              <Typography sx={{ mt: 2 }}>Chargement des clients...</Typography>
+            </Box>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Client</TableCell>
+                    <TableCell>Contact</TableCell>
+                    <TableCell>Risque de Churn</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+  
+                <TableBody>
+                  {filteredClients
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((client) => (
+                      <React.Fragment key={client.id.toString()}>
+                        <TableRow>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {client.name}
+                              <IconButton
+                                size="small"
+                                onClick={() => toggleRowExpanded(client.id.toString())}
+                              >
+                                {expandedRows.has(client.id.toString()) ? <ExpandLess /> : <ExpandMore />}
+                              </IconButton>
                             </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))}
-              </TableBody>
-            </Table>
-            <TablePagination
-              component="div"
-              count={filteredClients.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              labelRowsPerPage="Lignes par page"
-            />
-          </TableContainer>
+                          </TableCell>
+  
+                          <TableCell>
+                            <Typography variant="body2">{client.email}</Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {client.phone}
+                            </Typography>
+                          </TableCell>
+  
+                          <TableCell>
+                            <Chip
+                              label={`${getClientRisk(client).risk}%`}
+                              color={getRiskLevel(getClientRisk(client).risk).color}
+                              size="small"
+                            />
+                          </TableCell>
+  
+                          <TableCell>
+                            <Tooltip title="Voir les recommandations">
+                              <IconButton onClick={() => handleOpenDialog(client, 'details')}>
+                                <RecommendIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Envoyer un email">
+                              <IconButton onClick={() => handleOpenDialog(client, 'email')}>
+                                <EmailIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Envoyer un SMS">
+                              <IconButton onClick={() => handleOpenDialog(client, 'message')}>
+                                <MessageIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+  
+                        {/* Recommandations IA */}
+                        <TableRow>
+                          <TableCell colSpan={6} sx={{ py: 0 }}>
+                            <Collapse in={expandedRows.has(client.id.toString())} timeout="auto" unmountOnExit>
+                              <Box sx={{ py: 2 }}>
+                                <Typography variant="h6" gutterBottom>
+                                  Recommandations IA
+                                </Typography>
+                                <Grid container spacing={2}>
+                                  {client.analyses.recommendations.map(
+                                    (recommendation: Recommendation, index: number) => (
+                                      <Grid item xs={12} md={4} key={index}>
+                                        <Card variant="outlined">
+                                          <CardContent>
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                                              <AutoAwesomeIcon color="primary" />
+                                              <Typography variant="body2">
+                                                {recommendation.model_response.recommendations.join(' | ') ||
+                                                  'Aucune recommandation'}
+                                              </Typography>
+                                            </Box>
+                                          </CardContent>
+                                        </Card>
+                                      </Grid>
+                                    )
+                                  )}
+                                </Grid>
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    ))}
+                </TableBody>
+              </Table>
+  
+              <TablePagination
+                component="div"
+                count={filteredClients.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Lignes par page"
+              />
+            </TableContainer>
+          )}
         </GridItem>
       </Grid>
-
+  
+      {/* Dialog IA, Email ou SMS */}
       <Dialog 
         open={openDialog} 
         onClose={handleCloseDialog}
@@ -860,14 +932,14 @@ const ClientList: React.FC = () => {
                 <Typography variant="subtitle1" gutterBottom>
                   Recommandations IA
                 </Typography>
-                {selectedClient?.recommendations.map((recommendation, index) => (
+                {selectedClient?.analyses.recommendations.map((recommendation: Recommendation, index: number) => (
                   <Alert 
                     key={index} 
                     severity="info" 
                     sx={{ mb: 1 }}
                     icon={<AutoAwesomeIcon />}
                   >
-                    {recommendation}
+                    {recommendation.model_response.recommendations.join(' | ') || 'Aucune recommandation'}
                   </Alert>
                 ))}
               </Box>
@@ -905,6 +977,7 @@ const ClientList: React.FC = () => {
                 <Typography variant="subtitle2" gutterBottom>
                   À: {messageType === 'email' ? selectedClient?.email : selectedClient?.phone}
                 </Typography>
+  
                 {messageType === 'email' && generatedContent?.subject && (
                   <TextField
                     fullWidth
@@ -913,6 +986,7 @@ const ClientList: React.FC = () => {
                     sx={{ mb: 2 }}
                   />
                 )}
+  
                 <TextField
                   fullWidth
                   multiline
@@ -922,6 +996,7 @@ const ClientList: React.FC = () => {
                   placeholder={`Rédigez votre ${messageType === 'email' ? 'email' : 'SMS'}...`}
                 />
               </Box>
+  
               <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                 <Button
                   startIcon={<AutoAwesomeIcon />}
@@ -931,6 +1006,7 @@ const ClientList: React.FC = () => {
                 >
                   Générer avec l&apos;IA
                 </Button>
+  
                 <Button
                   startIcon={<AutoAwesomeIcon color="secondary" />}
                   variant="outlined"
@@ -941,6 +1017,7 @@ const ClientList: React.FC = () => {
                 >
                   Prompt personnalisé
                 </Button>
+  
                 <Button
                   startIcon={<ContentCopy />}
                   variant="outlined"
@@ -965,7 +1042,8 @@ const ClientList: React.FC = () => {
           </>
         )}
       </Dialog>
-
+  
+      {/* Snackbar de notification */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
@@ -979,7 +1057,8 @@ const ClientList: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
+  
+      {/* Dialog personnalisé IA */}
       <GenerateMessageDialog
         open={generateMessageOpen}
         onClose={handleCloseGenerateMessage}

@@ -504,9 +504,20 @@ class FullClientProcessingView(APIView):
                 return Response({'error': 'Le fichier doit être au format CSV'}, status=400)
 
             try:
-                decoded_file = file.read().decode('utf-8').splitlines()
-                reader = csv.DictReader(decoded_file)
+                try:
+                    decoded_file = file.read().decode('utf-8').splitlines()
+                except UnicodeDecodeError:
+                    file.seek(0)
+                    decoded_file = file.read().decode('latin-1').splitlines()
+               # Détection automatique du séparateur
+                sample = "\n".join(decoded_file[:5])
+                dialect = csv.Sniffer().sniff(sample)
+                reader = csv.DictReader(decoded_file, dialect=dialect)
                 
+                # Nettoyage des noms de colonnes (enlève BOM, espaces, etc.)
+                if reader.fieldnames:
+                    reader.fieldnames = [fn.strip().replace('\ufeff', '') for fn in reader.fieldnames]
+                    
                 # Vérifier les champs requis dans le CSV
                 required_fields = [
                     'client_name', 'gender', 'SeniorCitizen', 'Partner', 'Dependents',
