@@ -18,6 +18,7 @@ sentiment_service/venv
 
 # Fichiers de configuration locaux
 backend.env
+ai-generator.env
 *.local
 
 # Dossiers de l’IDE

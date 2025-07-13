@@ -5,6 +5,10 @@ from httpx import ReadTimeout, HTTPError
 from typing import Literal
 import os
 import logging
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -12,7 +16,17 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+if not OPENROUTER_API_KEY:
+    logger.error(" Clé API OpenRouter manquante!")
+    logger.error("Ajoutez OPENROUTER_API_KEY dans votre fichier .env ou variables d'environnement")
+    raise ValueError("La variable d'environnement OPENROUTER_API_KEY est requise")
+
+# Vérification du format de la clé
+if not OPENROUTER_API_KEY.startswith("sk-or-v1-"):
+    logger.warning("⚠️ Format de clé API OpenRouter suspect")
+else:
+    logger.info("✅ Clé API OpenRouter chargée avec succès")
 
 
 class MessageRequest(BaseModel):
